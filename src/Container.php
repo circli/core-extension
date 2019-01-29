@@ -2,6 +2,7 @@
 
 namespace Circli\Core;
 
+use Circli\Contracts\EventSubscriberInterface;
 use Circli\Contracts\ExtensionInterface;
 use Circli\Contracts\InitAdrApplication;
 use Circli\Contracts\InitCliApplication;
@@ -25,6 +26,8 @@ abstract class Container
     protected $extensions = [];
     /** @var EventDispatcherInterface */
     protected $eventDispatcher;
+    /** @var ContainerInterface */
+    protected $container;
 
     public function __construct(Environment $environment, string $basePath)
     {
@@ -105,13 +108,14 @@ abstract class Container
         $this->initDefinitions($containerBuilder, $definitionPath);
 
         $modules = $pathContainer->loadConfigFile('modules');
-        if (\is_array($modules) && count($modules)) {
+        if (\is_array($modules) && \count($modules)) {
             foreach ($modules as $module) {
                 if (\is_string($module) && \class_exists($module)) {
                     $module = new $module($pathContainer);
                 }
                 if ($module instanceof ModuleInterface) {
-                    $module->configure();
+                    $definitions = $module->configure();
+                    $containerBuilder->addDefinitions($definitions);
                 }
                 if ($module instanceof InitCliApplication) {
                     $this->eventDispatcher->trigger(new InitExtension($module));
@@ -119,10 +123,58 @@ abstract class Container
                 if ($module instanceof InitAdrApplication) {
                     $this->eventDispatcher->trigger(new InitModule($module));
                 }
+
                 $this->modules[] = $module;
             }
         }
 
-        return $containerBuilder->build();
+        return $this->container = $containerBuilder->build();
+    }
+
+    public function registerEvents(array $classes): void
+    {
+        foreach ($classes as $class) {
+            if (\in_array(EventSubscriberInterface::class, class_implements($class), true)) {
+                $events = $class::getSubscribedEvents();
+                foreach ($events as $key => $value) {
+                    $eventName = \is_string($key) ? $key : $value;
+                    $listeners = [];
+
+                    if (\is_int($key)) {
+                        $listeners[] = $class;
+                    }
+                    if (\is_callable($value) || class_exists($value)) {
+                        $listeners[] = $value;
+                    }
+                    elseif (\is_array($value)) {
+                        foreach ($value as $clb) {
+                            if (\is_callable($clb) ||
+                                class_exists($clb) ||
+                                (\is_array($clb) && class_exists($clb[0]))
+                            ) {
+                                $listeners[] = $clb;
+                            }
+                        }
+                    }
+
+                    if (\count($listeners)) {
+                        foreach ($listeners as $listener) {
+                            $this->eventDispatcher->listen($eventName, function ($event) use ($listener) {
+                                if (!\is_callable($listener) && class_exists($listener[0])) {
+                                    $cls = $this->container->get($listener[0]);
+                                    if (!\is_callable($cls)) {
+                                        $listener = [$cls, $listener[1]];
+                                    }
+                                    else {
+                                        $listener = $cls;
+                                    }
+                                }
+                                return $listener($event);
+                            });
+                        }
+                    }
+                }
+            }
+        }
     }
 }
