@@ -14,4 +14,5 @@ final class Environment extends Enum
 	public const PRODUCTION = 'production';
 	public const DEVELOPMENT = 'development';
 	public const STAGING = 'staging';
+	public const TESTING = 'testing';
 }
