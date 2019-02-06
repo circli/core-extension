@@ -12,6 +12,7 @@ use Circli\Core\Events\InitExtension;
 use Circli\Core\Events\InitModule;
 use Circli\EventDispatcher\EventDispatcher;
 use Circli\EventDispatcher\EventDispatcherInterface;
+use Circli\EventDispatcher\LazyListenerFactory;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 
@@ -90,6 +91,7 @@ abstract class Container
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
+        $eventProvider = [];
         $extensions = $pathContainer->loadConfigFile('extensions');
         foreach ($extensions as $extension) {
             if (\is_string($extension) && \class_exists($extension)) {
@@ -99,7 +101,7 @@ abstract class Container
                 $containerBuilder->addDefinitions($extension->configure());
             }
             if ($extension instanceof EventProviderInterface) {
-                $extension->registerEvents($this->eventDispatcher);
+                $eventProvider[] = $extension;
             }
             if ($extension instanceof InitCliApplication) {
                 $this->eventDispatcher->trigger(new InitExtension($extension));
@@ -121,7 +123,7 @@ abstract class Container
                     $containerBuilder->addDefinitions($definitions);
                 }
                 if ($module instanceof EventProviderInterface) {
-                    $module->registerEvents($this->eventDispatcher);
+                    $eventProvider[] = $module;
                 }
                 if ($module instanceof InitCliApplication) {
                     $this->eventDispatcher->trigger(new InitExtension($module));
@@ -134,53 +136,15 @@ abstract class Container
             }
         }
 
-        return $this->container = $containerBuilder->build();
-    }
+        $this->container = $containerBuilder->build();
 
-    public function registerEvents(array $classes): void
-    {
-        foreach ($classes as $class) {
-            if (\in_array(EventSubscriberInterface::class, class_implements($class), true)) {
-                $events = $class::getSubscribedEvents();
-                foreach ($events as $key => $value) {
-                    $eventName = \is_string($key) ? $key : $value;
-                    $listeners = [];
-
-                    if (\is_int($key)) {
-                        $listeners[] = $class;
-                    }
-                    if (\is_callable($value) || class_exists($value)) {
-                        $listeners[] = $value;
-                    }
-                    elseif (\is_array($value)) {
-                        foreach ($value as $clb) {
-                            if (\is_callable($clb) ||
-                                class_exists($clb) ||
-                                (\is_array($clb) && class_exists($clb[0]))
-                            ) {
-                                $listeners[] = $clb;
-                            }
-                        }
-                    }
-
-                    if (\count($listeners)) {
-                        foreach ($listeners as $listener) {
-                            $this->eventDispatcher->listen($eventName, function ($event) use ($listener) {
-                                if (!\is_callable($listener) && class_exists($listener[0])) {
-                                    $cls = $this->container->get($listener[0]);
-                                    if (!\is_callable($cls)) {
-                                        $listener = [$cls, $listener[1]];
-                                    }
-                                    else {
-                                        $listener = $cls;
-                                    }
-                                }
-                                return $listener($event);
-                            });
-                        }
-                    }
-                }
+        if (\count($eventProvider)) {
+            $lazyFactory = new LazyListenerFactory(new EventListenerResolver($this->container));
+            foreach ($eventProvider as $providerCls) {
+                $providerCls->registerEvents($this->eventDispatcher, $lazyFactory);
             }
         }
+
+        return $this->container;
     }
 }
