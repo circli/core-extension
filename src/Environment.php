@@ -8,6 +8,7 @@ use Sunkan\Enum\Enum;
  * @method static Environment PRODUCTION()
  * @method static Environment DEVELOPMENT()
  * @method static Environment STAGING()
+ * @method static Environment TESTING()
  */
 final class Environment extends Enum
 {
