@@ -2,6 +2,7 @@
 
 namespace Circli\Core;
 
+use Circli\Contracts\EventProviderInterface;
 use Circli\Contracts\EventSubscriberInterface;
 use Circli\Contracts\ExtensionInterface;
 use Circli\Contracts\InitAdrApplication;
@@ -97,7 +98,9 @@ abstract class Container
             if ($extension instanceof ExtensionInterface) {
                 $containerBuilder->addDefinitions($extension->configure());
             }
-
+            if ($extension instanceof EventProviderInterface) {
+                $extension->registerEvents($this->eventDispatcher);
+            }
             if ($extension instanceof InitCliApplication) {
                 $this->eventDispatcher->trigger(new InitExtension($extension));
             }
@@ -116,6 +119,9 @@ abstract class Container
                 if ($module instanceof ModuleInterface) {
                     $definitions = $module->configure();
                     $containerBuilder->addDefinitions($definitions);
+                }
+                if ($module instanceof EventProviderInterface) {
+                    $module->registerEvents($this->eventDispatcher);
                 }
                 if ($module instanceof InitCliApplication) {
                     $this->eventDispatcher->trigger(new InitExtension($module));
