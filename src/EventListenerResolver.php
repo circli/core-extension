@@ -21,8 +21,17 @@ class EventListenerResolver implements ListenerResolverInterface
             return $listener;
         }
 
+        $handler = null;
+        if (\is_array($listener)) {
+            [$listener, $handler] = $listener;
+        }
+
         if (class_exists($listener)) {
             $cls = $this->container->get($listener);
+            if ($handler && method_exists($cls, $handler)) {
+                return [$cls, $handler];
+            }
+
             if (\is_callable($cls)) {
                 return $cls;
             }
