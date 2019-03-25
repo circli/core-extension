@@ -3,11 +3,14 @@
 namespace Circli\Core;
 
 use Aura\Payload_Interface\PayloadInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class PayloadStatusToHttpStatus
 {
 	private const PAYLOAD_TO_HTTP = [
 		'FOUND' => 200,
+		'POST_FOUND' => 302,
+		'PUT_FOUND' => 302,
 		'SUCCESS' => 200,
 		'AUTHORIZED' => 200,
 		'AUTHENTICATED' => 200,
@@ -51,19 +54,20 @@ class PayloadStatusToHttpStatus
 		'NOT_UPDATED' => 'error',
 	];
 
-	public static function httpCode(PayloadInterface $payload)
+	public static function httpCode(PayloadInterface $payload, ServerRequestInterface $request = null)
 	{
-		if (isset(self::PAYLOAD_TO_HTTP[$payload->getStatus()])) {
-			return self::PAYLOAD_TO_HTTP[$payload->getStatus()];
+		if ($request) {
+			$key = $request->getMethod() . '_' . $payload->getStatus();
+			if (isset(self::PAYLOAD_TO_HTTP[$key])) {
+				return self::PAYLOAD_TO_HTTP[$key];
+			}
 		}
-		return 500;
+
+		return self::PAYLOAD_TO_HTTP[$payload->getStatus()] ?? 500;
 	}
 
 	public static function jsendStatus(PayloadInterface $payload)
 	{
-		if (isset(self::PAYLOAD_TO_JSEND[$payload->getStatus()])) {
-			return self::PAYLOAD_TO_JSEND[$payload->getStatus()];
-		}
-		return 'error';
+		return self::PAYLOAD_TO_JSEND[$payload->getStatus()] ?? 'error';
 	}
 }
