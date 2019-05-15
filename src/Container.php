@@ -2,8 +2,6 @@
 
 namespace Circli\Core;
 
-use Circli\Contracts\EventProviderInterface;
-use Circli\Contracts\EventSubscriberInterface;
 use Circli\Contracts\ExtensionInterface;
 use Circli\Contracts\InitAdrApplication;
 use Circli\Contracts\InitCliApplication;
@@ -11,10 +9,9 @@ use Circli\Contracts\ModuleInterface;
 use Circli\Core\Events\InitExtension;
 use Circli\Core\Events\InitModule;
 use Circli\EventDispatcher\EventDispatcher;
-use Circli\EventDispatcher\EventDispatcherInterface;
-use Circli\EventDispatcher\LazyListenerFactory;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 abstract class Container
 {
@@ -100,7 +97,7 @@ abstract class Container
             if ($extension instanceof ExtensionInterface) {
                 $containerBuilder->addDefinitions($extension->configure());
             }
-            if ($extension instanceof EventProviderInterface) {
+            if ($extension instanceof \Psr\EventDispatcher\ListenerProviderInterface) {
                 $eventProvider[] = $extension;
             }
             if ($extension instanceof InitCliApplication) {
@@ -122,7 +119,7 @@ abstract class Container
                     $definitions = $module->configure();
                     $containerBuilder->addDefinitions($definitions);
                 }
-                if ($module instanceof EventProviderInterface) {
+                if ($module instanceof \Psr\EventDispatcher\ListenerProviderInterface) {
                     $eventProvider[] = $module;
                 }
                 if ($module instanceof InitCliApplication) {
@@ -139,6 +136,7 @@ abstract class Container
         $this->container = $containerBuilder->build();
 
         if (\count($eventProvider)) {
+            //todo fix
             $lazyFactory = new LazyListenerFactory(new EventListenerResolver($this->container));
             foreach ($eventProvider as $providerCls) {
                 $providerCls->registerEvents($this->eventDispatcher, $lazyFactory);

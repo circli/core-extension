@@ -13,10 +13,11 @@
   "require": {
     "aura/payload": "~3.0",
     "circli/contracts": "dev-master",
-    "circli/event-dispatcher": "^1.0",
+    "circli/event-dispatcher": "^2.0",
     "php-di/php-di": "^6.0",
     "psr/container": "^1.0",
     "psr/log": "^1.0",
+    "psr/event-dispatcher": "^1.0",
     "psr/http-factory": "^1.0",
     "psr/http-message": "^1.0",
     "psr/http-server-middleware": "^1.0",
