@@ -6,12 +6,20 @@ use Circli\Contracts\ExtensionInterface;
 use Circli\Contracts\InitAdrApplication;
 use Circli\Contracts\InitCliApplication;
 use Circli\Contracts\ModuleInterface;
+use Circli\Contracts\PathContainer;
 use Circli\Core\Events\InitExtension;
 use Circli\Core\Events\InitModule;
 use Circli\EventDispatcher\EventDispatcher;
+use function class_exists;
+use function count;
 use DI\ContainerBuilder;
+use Fig\EventDispatcher\AggregateProvider;
+use function file_exists;
+use function is_array;
+use function is_string;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\EventDispatcher\ListenerProviderInterface;
 
 abstract class Container
 {
@@ -27,15 +35,18 @@ abstract class Container
     protected $eventDispatcher;
     /** @var ContainerInterface */
     protected $container;
+    /** @var AggregateProvider */
+    protected $eventListenerProvider;
 
     public function __construct(Environment $environment, string $basePath)
     {
         $this->environment = $environment;
         $this->basePath = $basePath;
-        $this->eventDispatcher = new EventDispatcher();
+        $this->eventListenerProvider = new AggregateProvider();
+        $this->eventDispatcher = new EventDispatcher($this->eventListenerProvider);
     }
 
-    abstract protected function getPathContainer(): \Circli\Contracts\PathContainer;
+    abstract protected function getPathContainer(): PathContainer;
 
     protected function initDefinitions(ContainerBuilder $builder, string $defaultDefinitionPath)
     {
@@ -44,6 +55,11 @@ abstract class Container
     public function getEventDispatcher(): EventDispatcherInterface
     {
         return $this->eventDispatcher;
+    }
+
+    public function getEventListenerProvider(): AggregateProvider
+    {
+        return $this->eventListenerProvider;
     }
 
     public function getCompilePath(): string
@@ -78,7 +94,7 @@ abstract class Container
 
         $configFile = $this->environment . '.php';
         //support for local dev config
-        if ($this->environment->is(Environment::DEVELOPMENT()) && \file_exists($configPath . 'local.php')) {
+        if ($this->environment->is(Environment::DEVELOPMENT()) && file_exists($configPath . 'local.php')) {
             $configFile = 'local.php';
         }
         $config->loadFile($configFile);
@@ -88,17 +104,16 @@ abstract class Container
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
-        $eventProvider = [];
         $extensions = $pathContainer->loadConfigFile('extensions');
         foreach ($extensions as $extension) {
-            if (\is_string($extension) && \class_exists($extension)) {
+            if (is_string($extension) && class_exists($extension)) {
                 $extension = new $extension($pathContainer);
             }
             if ($extension instanceof ExtensionInterface) {
                 $containerBuilder->addDefinitions($extension->configure());
             }
-            if ($extension instanceof \Psr\EventDispatcher\ListenerProviderInterface) {
-                $eventProvider[] = $extension;
+            if ($extension instanceof ListenerProviderInterface) {
+                $this->eventListenerProvider->addProvider($extension);
             }
             if ($extension instanceof InitCliApplication) {
                 $this->eventDispatcher->trigger(new InitExtension($extension));
@@ -110,23 +125,23 @@ abstract class Container
         $this->initDefinitions($containerBuilder, $definitionPath);
 
         $modules = $pathContainer->loadConfigFile('modules');
-        if (\is_array($modules) && \count($modules)) {
+        if (is_array($modules) && count($modules)) {
             foreach ($modules as $module) {
-                if (\is_string($module) && \class_exists($module)) {
+                if (is_string($module) && class_exists($module)) {
                     $module = new $module($pathContainer);
                 }
                 if ($module instanceof ModuleInterface) {
                     $definitions = $module->configure();
                     $containerBuilder->addDefinitions($definitions);
                 }
-                if ($module instanceof \Psr\EventDispatcher\ListenerProviderInterface) {
-                    $eventProvider[] = $module;
+                if ($module instanceof ListenerProviderInterface) {
+                    $this->eventListenerProvider->addProvider($module);
                 }
                 if ($module instanceof InitCliApplication) {
-                    $this->eventDispatcher->trigger(new InitExtension($module));
+                    $this->eventDispatcher->dispatch(new InitExtension($module));
                 }
                 if ($module instanceof InitAdrApplication) {
-                    $this->eventDispatcher->trigger(new InitModule($module));
+                    $this->eventDispatcher->dispatch(new InitModule($module));
                 }
 
                 $this->modules[] = $module;
@@ -134,14 +149,6 @@ abstract class Container
         }
 
         $this->container = $containerBuilder->build();
-
-        if (\count($eventProvider)) {
-            //todo fix
-            $lazyFactory = new LazyListenerFactory(new EventListenerResolver($this->container));
-            foreach ($eventProvider as $providerCls) {
-                $providerCls->registerEvents($this->eventDispatcher, $lazyFactory);
-            }
-        }
 
         return $this->container;
     }
