@@ -1,7 +1,12 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Circli\Core;
 
+use function class_exists;
+use function count;
+use function file_exists;
+use function is_array;
+use function is_string;
 use Circli\Contracts\ExtensionInterface;
 use Circli\Contracts\InitAdrApplication;
 use Circli\Contracts\InitCliApplication;
@@ -10,13 +15,8 @@ use Circli\Contracts\PathContainer;
 use Circli\Core\Events\InitExtension;
 use Circli\Core\Events\InitModule;
 use Circli\EventDispatcher\EventDispatcher;
-use function class_exists;
-use function count;
 use DI\ContainerBuilder;
 use Fig\EventDispatcher\AggregateProvider;
-use function file_exists;
-use function is_array;
-use function is_string;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\EventDispatcher\ListenerProviderInterface;
