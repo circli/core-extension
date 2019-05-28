@@ -53,6 +53,11 @@ abstract class Container
     {
     }
 
+    public function getContainer(): ContainerInterface
+    {
+        return $this->container;
+    }
+
     public function getEventDispatcher(): EventDispatcherInterface
     {
         return $this->eventDispatcher;
