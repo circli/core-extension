@@ -61,7 +61,7 @@ class Config implements ContainerInterface
             $configs = [];
             foreach ($this->files as $configFile) {
                 if (!file_exists($this->configPath . $configFile)) {
-                    throw new \RuntimeException('Configuration not found');
+                    throw new \RuntimeException('Configuration not found: ' . $this->configPath . $configFile);
                 }
                 $configs[] = require $this->configPath . $configFile;
                 $this->loaded[] = $configFile;
