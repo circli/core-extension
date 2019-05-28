@@ -2,6 +2,7 @@
 
 namespace Circli\Core;
 
+use Circli\Core\Events\PostContainerBuild;
 use function class_exists;
 use function count;
 use function file_exists;
@@ -149,6 +150,8 @@ abstract class Container
         }
 
         $this->container = $containerBuilder->build();
+
+        $this->eventDispatcher->dispatch(new PostContainerBuild($this));
 
         return $this->container;
     }
