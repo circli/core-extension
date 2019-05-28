@@ -78,11 +78,11 @@ abstract class Container
         }
 
         $pathContainer = $this->getPathContainer();
-
         $configPath = $this->basePath . '/config/';
         $config = new Config($configPath);
         $config->add([
             'app.mode' => $this->environment,
+            'app.basePath' => $this->basePath,
         ]);
 
         $containerBuilder->addDefinitions([
