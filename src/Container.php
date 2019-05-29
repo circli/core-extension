@@ -79,8 +79,8 @@ abstract class Container
         if ($this->environment->is(Environment::PRODUCTION()) ||
             $this->environment->is(Environment::STAGING())
         ) {
-            $containerBuilder->enableCompilation($this->basePath . '/cache/di');
-            $containerBuilder->writeProxiesToFile(true, $this->basePath . '/cache/di/proxies');
+            $containerBuilder->enableCompilation($this->getCompilePath());
+            $containerBuilder->writeProxiesToFile(true, $this->getCompilePath() . '/cache/di/proxies');
         }
 
         $pathContainer = $this->getPathContainer();
