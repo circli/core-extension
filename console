@@ -1,0 +1,24 @@
+#!/usr/bin/env php
+<?php
+
+use Circli\Core\Environment;
+
+if (PHP_SAPI !== 'cli') {
+    echo 'Warning: Composer should be invoked via the CLI version of PHP, not the ' . PHP_SAPI . ' SAPI' . PHP_EOL;
+}
+
+$paths = [
+    dirname(__DIR__) . '/vendor/autoload.php',
+    dirname(__DIR__, 2) . '/vendor/autoload.php',
+    dirname(__DIR__, 3) . '/vendor/autoload.php',
+];
+
+foreach ($paths as $path) {
+    if (file_exists($path)) {
+        include $path;
+        break;
+    }
+}
+
+$app = new \Circli\Core\Cli(Environment::fromValue(getenv('APP_ENV') ?: Environment::DEVELOPMENT));
+$app->run();

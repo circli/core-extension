@@ -2,6 +2,7 @@
 
 namespace Circli\Core;
 
+use Circli\Core\Events\InitCliCommands;
 use Circli\Core\Events\PostContainerBuild;
 use function class_exists;
 use function count;
@@ -122,7 +123,7 @@ abstract class Container
                 $this->eventListenerProvider->addProvider($extension);
             }
             if ($extension instanceof InitCliApplication) {
-                $this->eventDispatcher->trigger(new InitExtension($extension));
+                $this->eventDispatcher->dispatch(new InitCliCommands($extension));
             }
 
             $this->extensions[] = $extension;
@@ -144,7 +145,7 @@ abstract class Container
                     $this->eventListenerProvider->addProvider($module);
                 }
                 if ($module instanceof InitCliApplication) {
-                    $this->eventDispatcher->dispatch(new InitExtension($module));
+                    $this->eventDispatcher->dispatch(new InitCliCommands($module));
                 }
                 if ($module instanceof InitAdrApplication) {
                     $this->eventDispatcher->dispatch(new InitModule($module));

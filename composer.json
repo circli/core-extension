@@ -29,5 +29,8 @@
     "psr-4": {
       "Circli\\Core\\": "src/"
     }
-  }
+  },
+  "bin": [
+    "console"
+  ]
 }
