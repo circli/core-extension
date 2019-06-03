@@ -111,6 +111,7 @@ abstract class Container
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
+        $cliApplications = [];
         $extensions = $pathContainer->loadConfigFile('extensions');
         foreach ($extensions as $extension) {
             if (is_string($extension) && class_exists($extension)) {
@@ -123,7 +124,7 @@ abstract class Container
                 $this->eventListenerProvider->addProvider($extension);
             }
             if ($extension instanceof InitCliApplication) {
-                $this->eventDispatcher->dispatch(new InitCliCommands($extension));
+                $cliApplications[] = $extension;
             }
 
             $this->extensions[] = $extension;
@@ -145,7 +146,7 @@ abstract class Container
                     $this->eventListenerProvider->addProvider($module);
                 }
                 if ($module instanceof InitCliApplication) {
-                    $this->eventDispatcher->dispatch(new InitCliCommands($module));
+                    $cliApplications[] = $module;
                 }
                 if ($module instanceof InitAdrApplication) {
                     $this->eventDispatcher->dispatch(new InitModule($module));
@@ -156,6 +157,9 @@ abstract class Container
         }
 
         $this->container = $containerBuilder->build();
+        foreach ($cliApplications as $application) {
+            $this->eventDispatcher->dispatch(new InitCliCommands($application, $this->container));
+        }
 
         $this->eventDispatcher->dispatch(new PostContainerBuild($this));
 

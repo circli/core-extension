@@ -3,18 +3,19 @@
 namespace Circli\Core\Events;
 
 use Circli\Contracts\InitCliApplication;
-use Symfony\Component\Console\Command\Command;
+use Psr\Container\ContainerInterface;
 
 final class InitCliCommands
 {
-    /** @var Command[] */
-    private $commands;
     /** @var InitCliApplication */
     private $application;
+    /** @var ContainerInterface */
+    private $container;
 
-    public function __construct(InitCliApplication $application)
+    public function __construct(InitCliApplication $application, ContainerInterface $container)
     {
         $this->application = $application;
+        $this->container = $container;
     }
 
     public function getApplication(): InitCliApplication
@@ -22,8 +23,8 @@ final class InitCliCommands
         return $this->application;
     }
 
-    public function getCommands(): array
+    public function getContainer(): ContainerInterface
     {
-        return $this->commands;
+        return $this->container;
     }
 }
