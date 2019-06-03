@@ -43,7 +43,7 @@ class Cli
         $this->containerBuilder->getEventListenerProvider()->addProvider($this->eventListenerProvider);
         $this->application = new Application(static::NAME, static::VERSION);
         $this->eventListenerProvider->listen(InitCliCommands::class, function (InitCliCommands $event) {
-            $event->getApplication()->initCli($this->application, $this->container);
+            $event->getApplication()->initCli($this->application, $event->getContainer());
         });
         $this->container = $this->containerBuilder->build();
     }
