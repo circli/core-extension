@@ -111,14 +111,31 @@ abstract class Container
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
+        $extensionRegistry = new Extensions();
+        $deferredDefinitions = [];
+
         $cliApplications = [];
         $extensions = $pathContainer->loadConfigFile('extensions');
-        foreach ($extensions as $extension) {
+        foreach ($extensions as $extensionName => $extension) {
             if (is_string($extension) && class_exists($extension)) {
                 $extension = new $extension($pathContainer);
+                $extensionRegistry->addExtension($extensionName, $extension);
             }
             if ($extension instanceof ExtensionInterface) {
-                $containerBuilder->addDefinitions($extension->configure());
+                $defs = $extension->configure();
+                if (isset($defs[0])) {
+                    foreach ($defs as $def) {
+                        if ($def instanceof ConditionalDefinition) {
+                            $deferredDefinitions[] = $def;
+                        }
+                        else {
+                            $containerBuilder->addDefinitions($def);
+                        }
+                    }
+                }
+                else {
+                    $containerBuilder->addDefinitions($defs);
+                }
             }
             if ($extension instanceof ListenerProviderInterface) {
                 $this->eventListenerProvider->addProvider($extension);
@@ -137,10 +154,23 @@ abstract class Container
             foreach ($modules as $module) {
                 if (is_string($module) && class_exists($module)) {
                     $module = new $module($pathContainer);
+                    $extensionRegistry->addModule(get_class($module), $module);
                 }
                 if ($module instanceof ModuleInterface) {
                     $definitions = $module->configure();
-                    $containerBuilder->addDefinitions($definitions);
+                    if (isset($definitions[0])) {
+                        foreach ($definitions as $def) {
+                            if ($def instanceof ConditionalDefinition) {
+                                $deferredDefinitions[] = $def;
+                            }
+                            else {
+                                $containerBuilder->addDefinitions($def);
+                            }
+                        }
+                    }
+                    else {
+                        $containerBuilder->addDefinitions($definitions);
+                    }
                 }
                 if ($module instanceof ListenerProviderInterface) {
                     $this->eventListenerProvider->addProvider($module);
@@ -153,6 +183,14 @@ abstract class Container
                 }
 
                 $this->modules[] = $module;
+            }
+        }
+
+        if ($deferredDefinitions) {
+            foreach ($deferredDefinitions as $def) {
+                if ($def->getCondition()->evaluate($extensionRegistry)) {
+                    $containerBuilder->addDefinitions($def->getDefinitions());
+                }
             }
         }
 
