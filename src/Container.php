@@ -201,6 +201,8 @@ abstract class Container
 
         $this->eventDispatcher->dispatch(new PostContainerBuild($this));
 
+        $this->eventListenerProvider->addProvider($this->container->get(AggregateProvider::class));
+
         return $this->container;
     }
 }
