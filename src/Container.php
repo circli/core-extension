@@ -2,6 +2,7 @@
 
 namespace Circli\Core;
 
+use Circli\Contracts\ProvidesInterface;
 use Circli\Core\Events\InitCliCommands;
 use Circli\Core\Events\PostContainerBuild;
 use function class_exists;
@@ -112,6 +113,7 @@ abstract class Container
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
         $extensionRegistry = new Extensions();
+        $containerBuilder->addDefinitions([Extensions::class => $extensionRegistry]);
         $deferredDefinitions = [];
 
         $cliApplications = [];
