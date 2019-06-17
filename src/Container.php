@@ -107,6 +107,7 @@ abstract class Container
         }
         $config->loadFile($configFile);
 
+        $containerBuilder->addDefinitions([PathContainer::class => $pathContainer]);
         $containerBuilder->addDefinitions([Config::class => $config]);
         $containerBuilder->addDefinitions([EventDispatcherInterface::class => $this->eventDispatcher]);
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
