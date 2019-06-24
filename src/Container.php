@@ -40,6 +40,8 @@ abstract class Container
     protected $container;
     /** @var AggregateProvider */
     protected $eventListenerProvider;
+    /** @var bool */
+    protected $allowDiCompile = true;
 
     public function __construct(Environment $environment, string $basePath)
     {
@@ -78,8 +80,11 @@ abstract class Container
     public function build(): ContainerInterface
     {
         $containerBuilder = new ContainerBuilder();
-        if ($this->environment->is(Environment::PRODUCTION()) ||
-            $this->environment->is(Environment::STAGING())
+        if ($this->allowDiCompile &&
+            (
+                $this->environment->is(Environment::PRODUCTION()) ||
+                $this->environment->is(Environment::STAGING())
+            )
         ) {
             $containerBuilder->enableCompilation($this->getCompilePath());
             $containerBuilder->writeProxiesToFile(true, $this->getCompilePath() . '/cache/di/proxies');
