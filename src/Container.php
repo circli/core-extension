@@ -43,6 +43,8 @@ abstract class Container
     protected $eventListenerProvider;
     /** @var bool */
     protected $allowDiCompile = true;
+    /** @var bool */
+    protected $forceCompile = false;
 
     public function __construct(Environment $environment, string $basePath)
     {
@@ -78,13 +80,19 @@ abstract class Container
         return $this->basePath . '/resources/di';
     }
 
+    public function forceCompile(): void
+    {
+        $this->forceCompile = true;
+    }
+
     public function build(): ContainerInterface
     {
         $containerBuilder = new ContainerBuilder();
-        if ($this->allowDiCompile &&
-            (
-                $this->environment->is(Environment::PRODUCTION()) ||
-                $this->environment->is(Environment::STAGING())
+        if ($this->forceCompile || (
+                $this->allowDiCompile && (
+                    $this->environment->is(Environment::PRODUCTION()) ||
+                    $this->environment->is(Environment::STAGING())
+                )
             )
         ) {
             $containerBuilder->enableCompilation($this->getCompilePath());
