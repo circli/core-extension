@@ -6,6 +6,7 @@ use Circli\Contracts\ExtensionInterface;
 use Circli\Contracts\InitCliApplication;
 use Circli\Contracts\PathContainer;
 use Circli\Core\Command\ContainerCompiler;
+use Circli\Core\Command\CrontabCompile;
 use Psr\Container\ContainerInterface;
 
 class Extension implements ExtensionInterface, InitCliApplication
@@ -27,5 +28,6 @@ class Extension implements ExtensionInterface, InitCliApplication
     public function initCli(\Symfony\Component\Console\Application $cli, ContainerInterface $container)
     {
         $cli->add($container->get(ContainerCompiler::class));
+        $cli->add($container->get(CrontabCompile::class));
     }
 }
