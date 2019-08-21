@@ -9,6 +9,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Cli
@@ -54,10 +55,10 @@ class Cli
         return $this->application->run();
     }
 
-    public function runCommand(string $command, ...$args): int
+    public function runCommand(string $command, $args = null): int
     {
-        if (class_exists($command)) {
-            $command = $command::$defaultName;
+        if (class_exists($command) && method_exists($command, 'getDefaultName')) {
+            $command = $command::getDefaultName();
         }
 
         if (!$command) {
@@ -65,7 +66,20 @@ class Cli
         }
 
         $commandInstance = $this->application->find($command);
-        array_unshift($args, $command);
-        return $commandInstance->run(new ArrayInput($args), new ConsoleOutput());
+        if (is_array($args)) {
+            if (isset($args[0])) {
+                array_unshift($args, $commandInstance->getName());
+                $input = new StringInput(implode(' ', $args));
+            }
+            else {
+                $args['command'] = $commandInstance->getName();
+                $input = new ArrayInput($args);
+            }
+        }
+        else {
+            $input = new StringInput($commandInstance->getName() . (is_string($args) ? ' ' . $args : ''));
+        }
+
+        return $commandInstance->run($input, new ConsoleOutput());
     }
 }
