@@ -4,11 +4,12 @@ namespace Circli\Core;
 
 use Circli\Core\Events\InitCliCommands;
 use Circli\EventDispatcher\ListenerProvider\DefaultProvider;
-use Circli\WebCore\Container;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Cli
 {
@@ -51,5 +52,20 @@ class Cli
     public function run(): int
     {
         return $this->application->run();
+    }
+
+    public function runCommand(string $command, ...$args): int
+    {
+        if (class_exists($command)) {
+            $command = $command::$defaultName;
+        }
+
+        if (!$command) {
+            throw new \InvalidArgumentException('Could\'t find command');
+        }
+
+        $commandInstance = $this->application->find($command);
+        array_unshift($args, $command);
+        return $commandInstance->run(new ArrayInput($args), new ConsoleOutput());
     }
 }
