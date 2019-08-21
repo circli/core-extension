@@ -82,4 +82,9 @@ class Cli
 
         return $commandInstance->run($input, new ConsoleOutput());
     }
+
+    public function getContainerBuilder(): Container
+    {
+        return $this->containerBuilder;
+    }
 }

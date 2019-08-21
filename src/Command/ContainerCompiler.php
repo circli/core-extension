@@ -2,8 +2,10 @@
 
 namespace Circli\Core\Command;
 
+use Circli\Core\Container;
 use Circli\Core\Environment;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -32,14 +34,24 @@ class ContainerCompiler extends Command
                 'Environment to compile container for',
                 'production'
             )
+            ->addArgument('container', InputArgument::OPTIONAL, 'Container class to compile. Need fqcn')
             ->setDescription('Compile di:container');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $env = Environment::fromValue($input->getOption('environment'));
+        $containerClass = $input->getArgument('container') ?? \App\Container::class;
 
-        $containerBuilder = new \App\Container($env, $this->basePath);
+        if (!class_exists($containerClass)) {
+            throw new \InvalidArgumentException('Can\'t find container class: ' . $containerClass);
+        }
+
+        $containerBuilder = new $containerClass($env, $this->basePath);
+        if (!$containerBuilder instanceof Container) {
+            throw new \RuntimeException('Invalid container type. Container must extend ' . Container::class);
+        }
+        $output->writeln('Found container: ' . get_class($containerBuilder));
         $containerBuilder->forceCompile();
         $path = $containerBuilder->getCompilePath();
 
