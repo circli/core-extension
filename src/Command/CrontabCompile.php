@@ -49,6 +49,17 @@ class CrontabCompile extends Command
             }
         }
 
+        if (file_exists($basePath . '/crontab')) {
+            $currentFile = file($basePath . '/crontab', FILE_IGNORE_NEW_LINES);
+            unset($currentFile[0]);
+            if (implode('', $currentFile) === implode('', $cron)) {
+                $output->writeln('Skip update crontab no change');
+                return 0;
+            }
+        }
+
+        array_unshift($cron, '# File auto generated on ' . date('c'));
         file_put_contents($basePath . '/crontab', implode("\n", $cron) . "\n");
+        return 0;
     }
 }
