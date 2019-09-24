@@ -6,6 +6,7 @@ use Circli\Contracts\PathContainer;
 use FilesystemIterator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class CrontabCompile extends Command
@@ -20,12 +21,17 @@ class CrontabCompile extends Command
         $this->pathContainer = $pathContainer;
     }
 
-    public function run(InputInterface $input, OutputInterface $output)
+    protected function configure()
+    {
+        $this->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'Base path on deploy server');
+    }
     {
         $basePath = $this->pathContainer->getBasePath();
         if (!file_exists($basePath . '/cron.d')) {
             return;
         }
+
+        $deployBasePath = $input->getOption('path') ?: $basePath;
 
         $cron = [];
         $cron[] = '# File auto generated on ' . date('c');
@@ -43,7 +49,7 @@ class CrontabCompile extends Command
                     $cron[] = '* * * * * APP_ENV={stage} /usr/local/bin/console-listener-spawner {domain}:{stage} ' . implode(' ', $parts);
                 }
                 elseif ($parts[5] === 'console') {
-                    $parts[5] = 'APP_ENV={stage} ' . $basePath . '/vendor/bin/console';
+                    $parts[5] = 'APP_ENV={stage} ' . $deployBasePath . '/vendor/bin/console';
                     $cron[] = implode(' ', $parts);
                 }
             }
