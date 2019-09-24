@@ -25,16 +25,17 @@ class CrontabCompile extends Command
     {
         $this->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'Base path on deploy server');
     }
+
+    public function execute(InputInterface $input, OutputInterface $output)
     {
         $basePath = $this->pathContainer->getBasePath();
         if (!file_exists($basePath . '/cron.d')) {
-            return;
+            return 0;
         }
 
         $deployBasePath = $input->getOption('path') ?: $basePath;
 
         $cron = [];
-        $cron[] = '# File auto generated on ' . date('c');
 
         $it = new FilesystemIterator($basePath . '/cron.d');
         foreach ($it as $fileInfo) {
