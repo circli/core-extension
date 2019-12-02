@@ -8,6 +8,7 @@ use Circli\Core\Events\PostContainerBuild;
 use Circli\EventDispatcher\ListenerProvider\DefaultProvider;
 use function class_exists;
 use function count;
+use function DI\autowire;
 use function file_exists;
 use function is_array;
 use function is_string;
@@ -124,7 +125,7 @@ abstract class Container
         $containerBuilder->addDefinitions([PathContainer::class => $pathContainer]);
         $containerBuilder->addDefinitions([Config::class => $config]);
         $containerBuilder->addDefinitions([EventDispatcherInterface::class => $this->eventDispatcher]);
-        $containerBuilder->addDefinitions([DefaultProvider::class => new DefaultProvider()]);
+        $containerBuilder->addDefinitions([DefaultProvider::class => autowire(DefaultProvider::class)]);
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
@@ -217,6 +218,9 @@ abstract class Container
             $this->eventDispatcher->dispatch(new InitCliCommands($application, $this->container));
         }
 
+        if ($this->forceCompile) {
+            return $this->container;
+        }
         $this->eventDispatcher->dispatch(new PostContainerBuild($this));
 
         $this->eventListenerProvider->addProvider($this->container->get(DefaultProvider::class));
