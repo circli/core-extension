@@ -96,8 +96,10 @@ abstract class Container
                 )
             )
         ) {
-            $containerBuilder->enableCompilation($this->getCompilePath());
-            $containerBuilder->writeProxiesToFile(true, $this->getCompilePath() . '/cache/di/proxies');
+            if (is_writable($this->getCompilePath())) {
+                $containerBuilder->enableCompilation($this->getCompilePath());
+                $containerBuilder->writeProxiesToFile(true, $this->getCompilePath() . '/cache/di/proxies');
+            }
         }
 
         $pathContainer = $this->getPathContainer();
