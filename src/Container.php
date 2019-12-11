@@ -223,11 +223,21 @@ abstract class Container
         if ($this->forceCompile) {
             return $this->container;
         }
-        $this->eventDispatcher->dispatch(new PostContainerBuild($this));
-
         $this->eventListenerProvider->addProvider($this->container->get(DefaultProvider::class));
         $this->eventListenerProvider->addProvider($this->container->get(AggregateProvider::class));
 
+        $this->eventDispatcher->dispatch(new PostContainerBuild($this));
+
         return $this->container;
+    }
+
+    public function getModules(): array
+    {
+        return $this->modules;
+    }
+
+    public function getExtensions(): array
+    {
+        return $this->extensions;
     }
 }
