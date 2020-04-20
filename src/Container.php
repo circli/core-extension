@@ -168,8 +168,6 @@ abstract class Container
             $this->extensions[] = $extension;
         }
 
-        $this->initDefinitions($containerBuilder, $definitionPath);
-
         $modules = $pathContainer->loadConfigFile('modules');
         if (is_array($modules) && count($modules)) {
             foreach ($modules as $module) {
@@ -214,6 +212,9 @@ abstract class Container
                 }
             }
         }
+
+        // Run site specific definitions last so that they override definitions from modules and extensions
+        $this->initDefinitions($containerBuilder, $definitionPath);
 
         $this->container = $containerBuilder->build();
         foreach ($cliApplications as $application) {
