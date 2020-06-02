@@ -3,6 +3,7 @@
 namespace Circli\Core;
 
 use Circli\Contracts\ProvidesInterface;
+use Circli\Core\Enum\Context;
 use Circli\Core\Events\InitCliCommands;
 use Circli\Core\Events\PostContainerBuild;
 use Circli\EventDispatcher\ListenerProvider\DefaultProvider;
@@ -46,6 +47,8 @@ abstract class Container
     protected $allowDiCompile = true;
     /** @var bool */
     protected $forceCompile = false;
+    /** @var Context */
+    protected $context;
 
     public function __construct(Environment $environment, string $basePath)
     {
@@ -53,6 +56,7 @@ abstract class Container
         $this->basePath = $basePath;
         $this->eventListenerProvider = new AggregateProvider();
         $this->eventDispatcher = new EventDispatcher($this->eventListenerProvider);
+        $this->context = php_sapi_name() === 'cli' ? Context::CONSOLE() : Context::SERVER();
     }
 
     abstract protected function getPathContainer(): PathContainer;
@@ -106,12 +110,14 @@ abstract class Container
         $configPath = $this->basePath . '/config/';
         $config = new Config($configPath);
         $config->add([
+            'app.context' => $this->context,
             'app.mode' => $this->environment,
             'app.basePath' => $this->basePath,
         ]);
 
         $containerBuilder->addDefinitions([
             'app.mode' => $this->environment,
+            'app.context' => $this->context,
         ]);
 
         $configPath = $pathContainer->getConfigPath();
@@ -124,6 +130,7 @@ abstract class Container
         }
         $config->loadFile($configFile);
 
+        $containerBuilder->addDefinitions([Context::class => $this->context]);
         $containerBuilder->addDefinitions([PathContainer::class => $pathContainer]);
         $containerBuilder->addDefinitions([Config::class => $config]);
         $containerBuilder->addDefinitions([EventDispatcherInterface::class => $this->eventDispatcher]);
@@ -207,7 +214,7 @@ abstract class Container
 
         if ($deferredDefinitions) {
             foreach ($deferredDefinitions as $def) {
-                if ($def->getCondition()->evaluate($extensionRegistry)) {
+                if ($def->getCondition()->evaluate($extensionRegistry, $this->environment, $this->context)) {
                     $containerBuilder->addDefinitions($def->getDefinitions());
                 }
             }
