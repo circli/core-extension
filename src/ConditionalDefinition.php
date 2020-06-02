@@ -2,13 +2,44 @@
 
 namespace Circli\Core;
 
+use Circli\Core\Conditions\ClassExists;
 use Circli\Core\Conditions\ConditionInterface;
+use Circli\Core\Conditions\ContextCondition;
+use Circli\Core\Conditions\EnvironmentCondition;
+use Circli\Core\Conditions\ExtensionLoaded;
+use Circli\Core\Conditions\ModuleLoaded;
+use Circli\Core\Enum\Context;
 
 class ConditionalDefinition
 {
     private $def;
     /** @var ConditionInterface */
     private $condition;
+
+    public static function classExist(string $class, $def): self
+    {
+        return new self($def, new ClassExists($class));
+    }
+
+    public static function moduleLoaded(string $module, $def): self
+    {
+        return new self($def, new ModuleLoaded($module));
+    }
+
+    public static function extensionLoaded(string $ext, $def): self
+    {
+        return new self($def, new ExtensionLoaded($ext));
+    }
+
+    public static function environment(Environment $env, $def): self
+    {
+        return new self($def, new EnvironmentCondition($env));
+    }
+
+    public static function context(Context $context, $def): self
+    {
+        return new self($def, new ContextCondition($context));
+    }
 
     public function __construct($def, ConditionInterface $condition)
     {
