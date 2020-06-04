@@ -135,6 +135,7 @@ abstract class Container
         $containerBuilder->addDefinitions([Config::class => $config]);
         $containerBuilder->addDefinitions([EventDispatcherInterface::class => $this->eventDispatcher]);
         $containerBuilder->addDefinitions([DefaultProvider::class => autowire(DefaultProvider::class)]);
+        $containerBuilder->addDefinitions([AggregateProvider::class => $this->eventListenerProvider]);
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
@@ -232,7 +233,6 @@ abstract class Container
             return $this->container;
         }
         $this->eventListenerProvider->addProvider($this->container->get(DefaultProvider::class));
-        $this->eventListenerProvider->addProvider($this->container->get(AggregateProvider::class));
 
         $this->eventDispatcher->dispatch(new PostContainerBuild($this));
 
