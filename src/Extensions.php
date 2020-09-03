@@ -2,7 +2,6 @@
 
 namespace Circli\Core;
 
-use Circli\Contracts\ExtensionInterface;
 use Circli\Contracts\ModuleInterface;
 
 final class Extensions

@@ -21,7 +21,7 @@ class Extension implements ExtensionInterface, InitCliApplication
             ContainerCompiler::class => function (ContainerInterface $container) {
                 $config = $container->get(Config::class);
                 return new ContainerCompiler($config->get('app.basePath'));
-            }
+            },
         ];
     }
 

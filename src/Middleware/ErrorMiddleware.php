@@ -13,44 +13,44 @@ use Psr\Log\LogLevel;
 
 class ErrorMiddleware implements MiddlewareInterface
 {
-	/** @var ResponseFactoryInterface */
-	private $responseFactory;
+    /** @var ResponseFactoryInterface */
+    private $responseFactory;
 
-	/** @var LoggerInterface */
-	private $logger;
+    /** @var LoggerInterface */
+    private $logger;
 
-	public function __construct(ResponseFactoryInterface $responseFactory, LoggerInterface $logger)
-	{
-		$this->responseFactory = $responseFactory;
-		$this->logger = $logger;
-	}
+    public function __construct(ResponseFactoryInterface $responseFactory, LoggerInterface $logger)
+    {
+        $this->responseFactory = $responseFactory;
+        $this->logger = $logger;
+    }
 
-	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-	{
-		try {
-			return $handler->handle($request);
-		}
-		catch (\Throwable $e) {
-			$message = 'Unexpected critical error';
-			$code = 500;
-			$status = 'error';
-			$level = LogLevel::CRITICAL;
-			$logPayload = [];
-			$responsePayload = null;
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        try {
+            return $handler->handle($request);
+        }
+        catch (\Throwable $e) {
+            $message = 'Unexpected critical error';
+            $code = 500;
+            $status = 'error';
+            $level = LogLevel::CRITICAL;
+            $logPayload = [];
+            $responsePayload = null;
 
-			$this->logger->log($level, $message, array_merge(['exception' => $e], $logPayload));
+            $this->logger->log($level, $message, array_merge(['exception' => $e], $logPayload));
 
-			$jsend = (new JSend())
-				->withMessage($message)
-				->withCode($code)
-				->withStatus($status)
-				->withData($responsePayload);
+            $jsend = (new JSend())
+                ->withMessage($message)
+                ->withCode($code)
+                ->withStatus($status)
+                ->withData($responsePayload);
 
-			$response = $this->responseFactory->createResponse($code);
-			$response = $response->withHeader('Content-Type', 'application/json');
-			$response->getBody()->write(json_encode($jsend));
+            $response = $this->responseFactory->createResponse($code);
+            $response = $response->withHeader('Content-Type', 'application/json');
+            $response->getBody()->write(json_encode($jsend));
 
-			return $response;
-		}
-	}
+            return $response;
+        }
+    }
 }

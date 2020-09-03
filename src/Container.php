@@ -2,30 +2,29 @@
 
 namespace Circli\Core;
 
-use Circli\Contracts\ProvidesInterface;
+use Circli\Contracts\ExtensionInterface;
+use Circli\Contracts\InitAdrApplication;
+use Circli\Contracts\InitCliApplication;
+use Circli\Contracts\ModuleInterface;
+use Circli\Contracts\PathContainer;
 use Circli\Core\Enum\Context;
 use Circli\Core\Events\InitCliCommands;
+use Circli\Core\Events\InitModule;
 use Circli\Core\Events\PostContainerBuild;
+use Circli\EventDispatcher\EventDispatcher;
 use Circli\EventDispatcher\ListenerProvider\DefaultProvider;
+use Circli\EventDispatcher\ListenerProvider\PriorityAggregateProvider;
+use DI\ContainerBuilder;
+use Fig\EventDispatcher\AggregateProvider;
+use Psr\Container\ContainerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\EventDispatcher\ListenerProviderInterface;
 use function class_exists;
 use function count;
 use function DI\autowire;
 use function file_exists;
 use function is_array;
 use function is_string;
-use Circli\Contracts\ExtensionInterface;
-use Circli\Contracts\InitAdrApplication;
-use Circli\Contracts\InitCliApplication;
-use Circli\Contracts\ModuleInterface;
-use Circli\Contracts\PathContainer;
-use Circli\Core\Events\InitExtension;
-use Circli\Core\Events\InitModule;
-use Circli\EventDispatcher\EventDispatcher;
-use DI\ContainerBuilder;
-use Fig\EventDispatcher\AggregateProvider;
-use Psr\Container\ContainerInterface;
-use Psr\EventDispatcher\EventDispatcherInterface;
-use Psr\EventDispatcher\ListenerProviderInterface;
 
 abstract class Container
 {

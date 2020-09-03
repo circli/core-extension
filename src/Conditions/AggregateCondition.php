@@ -14,7 +14,7 @@ final class AggregateCondition implements ConditionInterface
 
     public function add(ConditionInterface $condition): void
     {
-        $this->conditions[]  = $condition;
+        $this->conditions[] = $condition;
     }
 
     public function evaluate(...$args): bool
