@@ -40,7 +40,7 @@ abstract class Container
     protected $eventDispatcher;
     /** @var ContainerInterface */
     protected $container;
-    /** @var AggregateProvider */
+    /** @var PriorityAggregateProvider */
     protected $eventListenerProvider;
     /** @var bool */
     protected $allowDiCompile = true;
@@ -53,7 +53,7 @@ abstract class Container
     {
         $this->environment = $environment;
         $this->basePath = $basePath;
-        $this->eventListenerProvider = new AggregateProvider();
+        $this->eventListenerProvider = new PriorityAggregateProvider();
         $this->eventDispatcher = new EventDispatcher($this->eventListenerProvider);
         $this->context = php_sapi_name() === 'cli' ? Context::CONSOLE() : Context::SERVER();
     }
@@ -135,6 +135,7 @@ abstract class Container
         $containerBuilder->addDefinitions([EventDispatcherInterface::class => $this->eventDispatcher]);
         $containerBuilder->addDefinitions([DefaultProvider::class => autowire(DefaultProvider::class)]);
         $containerBuilder->addDefinitions([AggregateProvider::class => $this->eventListenerProvider]);
+        $containerBuilder->addDefinitions([PriorityAggregateProvider::class => $this->eventListenerProvider]);
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
