@@ -2,6 +2,7 @@
 
 namespace Circli\Core\Command;
 
+use Circli\Console\Definition;
 use Circli\Core\Container;
 use Circli\Core\Environment;
 use Symfony\Component\Console\Command\Command;
@@ -10,7 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ContainerCompiler extends Command
+class ContainerCompiler extends Definition
 {
     protected static $defaultName = 'circli:di:compile';
     /** @var string */
