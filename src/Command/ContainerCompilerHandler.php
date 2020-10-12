@@ -2,52 +2,28 @@
 
 namespace Circli\Core\Command;
 
-use Circli\Console\Definition;
+use Circli\Contracts\PathContainer;
+use Circli\Core\Command\Input\ContainerCompilerInput;
 use Circli\Core\Container;
-use Circli\Core\Environment;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ContainerCompiler extends Definition
+class ContainerCompilerHandler
 {
-    protected static $defaultName = 'circli:di:compile';
-    /** @var string */
-    private $basePath;
+    private string $basePath;
 
-    public function __construct(string $basePath)
+    public function __construct(PathContainer $pathContainer)
     {
-        parent::__construct();
-        $this->basePath = $basePath;
+        $this->basePath = $pathContainer->getBasePath();
     }
 
-    protected function configure(): void
+    public function __invoke(ContainerCompilerInput $input, OutputInterface $output): int
     {
-        parent::configure();
-        $this
-            ->addOption(
-                'environment',
-                'e',
-                InputOption::VALUE_OPTIONAL,
-                'Environment to compile container for',
-                'production'
-            )
-            ->addArgument('container', InputArgument::OPTIONAL, 'Container class to compile. Need fqcn')
-            ->setDescription('Compile di:container');
-    }
-
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
-        $env = Environment::fromValue($input->getOption('environment'));
-        $containerClass = $input->getArgument('container') ?? \App\Container::class;
-
+        $containerClass = $input->getContainerClass();
         if (!class_exists($containerClass)) {
             throw new \InvalidArgumentException('Can\'t find container class: ' . $containerClass);
         }
 
-        $containerBuilder = new $containerClass($env, $this->basePath);
+        $containerBuilder = new $containerClass($input->getEnvironment(), $this->basePath);
         if (!$containerBuilder instanceof Container) {
             throw new \RuntimeException('Invalid container type. Container must extend ' . Container::class);
         }
@@ -62,6 +38,7 @@ class ContainerCompiler extends Definition
         $output->write('Compiling container to: ' . str_replace($this->basePath, '', $path) . "\t\t\t");
         $containerBuilder->build();
         $output->writeln('<info>Ok</info>');
+        return 0;
     }
 
     private function cleanCompileDirectory(string $compileDir): void

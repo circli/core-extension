@@ -2,11 +2,12 @@
 
 namespace Circli\Core;
 
+use Circli\Console\Application;
+use Circli\Console\ContainerCommandResolver;
 use Circli\Core\Events\InitCliCommands;
 use Circli\EventDispatcher\ListenerProvider\DefaultProvider;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\StringInput;
@@ -14,21 +15,14 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Cli
 {
-    protected const NAME = 'CircliConsoleApplication';
-    protected const VERSION = '{VERSION}';
+    protected ContainerInterface $container;
+    protected Container $containerBuilder;
+    protected EventDispatcherInterface $eventDispatcher;
+    protected DefaultProvider $eventListenerProvider;
 
-    /** @var ContainerInterface */
-    protected $container;
-    /** @var Container */
-    protected $containerBuilder;
-    /** @var EventDispatcherInterface */
-    protected $eventDispatcher;
-    /** @var DefaultProvider */
-    protected $eventListenerProvider;
     /** @var Command[] */
-    protected $commands;
-    /** @var Application */
-    protected $application;
+    protected array $commands;
+    protected Application $application;
 
     public function __construct(Environment $mode, string $basePath = null)
     {
@@ -38,16 +32,23 @@ class Cli
         elseif (class_exists(\App\Container::class)) {
             $containerClass = \App\Container::class;
         }
+        else {
+            throw new \RuntimeException('No container builder found');
+        }
 
-        $this->containerBuilder = new $containerClass($mode, $basePath ?? \dirname(__DIR__, 3));
+        $containerBuilder = new $containerClass($mode, $basePath ?? \dirname(__DIR__, 3));
+        if (!$containerBuilder instanceof Container) {
+            throw new \RuntimeException('Container must extend: ' . Container::class);
+        }
+        $this->containerBuilder = $containerBuilder;
         $this->eventDispatcher = $this->containerBuilder->getEventDispatcher();
         $this->eventListenerProvider = new DefaultProvider();
         $this->containerBuilder->getEventListenerProvider()->addProvider($this->eventListenerProvider);
-        $this->application = new Application(static::NAME, static::VERSION);
         $this->eventListenerProvider->listen(InitCliCommands::class, function (InitCliCommands $event) {
             $event->getApplication()->initCli($this->application, $event->getContainer());
         });
         $this->container = $this->containerBuilder->build();
+        $this->application = new Application(new ContainerCommandResolver($this->container));
     }
 
     public function run(): int
@@ -81,10 +82,5 @@ class Cli
         }
 
         return $commandInstance->run($input, new ConsoleOutput());
-    }
-
-    public function getContainerBuilder(): Container
-    {
-        return $this->containerBuilder;
     }
 }
