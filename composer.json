@@ -1,37 +1,37 @@
 {
-  "name": "circli/core",
-  "type": "circli-extension",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Andreas Sundqvist",
-      "email": "andreas@oak-valley.se"
-    }
-  ],
-  "minimum-stability": "dev",
-  "prefer-stable": true,
-  "require": {
-    "aura/payload": "~3.0",
-    "circli/contracts": "^1.0",
-    "circli/event-dispatcher": "^2.3",
-    "php-di/php-di": "^6.0",
-    "psr/container": "^1.0",
-    "psr/log": "^1.0",
-    "fig/event-dispatcher-util": "^1.0",
-    "psr/event-dispatcher": "^1.0",
-    "psr/http-factory": "^1.0",
-    "psr/http-message": "^1.0",
-    "psr/http-server-middleware": "^1.0",
-    "sunkan/actus": "^2.0",
-    "sunkan/enum": "^1.0",
-    "symfony/console": "^4.3|^5.0"
-  },
-  "autoload": {
-    "psr-4": {
-      "Circli\\Core\\": "src/"
-    }
-  },
-  "bin": [
-    "console"
-  ]
+    "name": "circli/core",
+    "type": "circli-extension",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Andreas Sundqvist",
+            "email": "andreas@oak-valley.se"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=7.4.0",
+        "circli/console": "^1.0",
+        "circli/contracts": "2.x-dev",
+        "circli/event-dispatcher": "^2.3",
+        "php-di/php-di": "^6.0",
+        "psr/container": "^1.0",
+        "psr/log": "^1.0",
+        "fig/event-dispatcher-util": "^1.0",
+        "psr/event-dispatcher": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^1.0",
+        "psr/http-server-middleware": "^1.0",
+        "sunkan/actus": "^2.0",
+        "sunkan/enum": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Circli\\Core\\": "src/"
+        }
+    },
+    "bin": [
+        "console"
+    ]
 }
