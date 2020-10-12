@@ -3,12 +3,12 @@
 namespace Circli\Core;
 
 use Circli\Contracts\ExtensionInterface;
-use Circli\Contracts\InitAdrApplication;
 use Circli\Contracts\InitCliApplication;
 use Circli\Contracts\ModuleInterface;
 use Circli\Contracts\PathContainer;
 use Circli\Core\Enum\Context;
 use Circli\Core\Events\InitCliCommands;
+use Circli\Core\Events\InitExtension;
 use Circli\Core\Events\InitModule;
 use Circli\Core\Events\PostContainerBuild;
 use Circli\EventDispatcher\EventDispatcher;
@@ -28,26 +28,16 @@ use function is_string;
 
 abstract class Container
 {
-    /** @var Environment */
-    protected $environment;
-    /** @var string */
-    protected $basePath;
-    /** @var array */
-    protected $modules = [];
-    /** @var array */
-    protected $extensions = [];
-    /** @var EventDispatcherInterface */
-    protected $eventDispatcher;
-    /** @var ContainerInterface */
-    protected $container;
-    /** @var PriorityAggregateProvider */
-    protected $eventListenerProvider;
-    /** @var bool */
-    protected $allowDiCompile = true;
-    /** @var bool */
-    protected $forceCompile = false;
-    /** @var Context */
-    protected $context;
+    protected Environment $environment;
+    protected string $basePath;
+    protected EventDispatcherInterface $eventDispatcher;
+    protected ContainerInterface $container;
+    protected PriorityAggregateProvider $eventListenerProvider;
+    protected bool $allowDiCompile = true;
+    protected bool $forceCompile = false;
+    protected Context $context;
+
+    protected Extensions $extensionRegistry;
 
     public function __construct(Environment $environment, string $basePath)
     {
@@ -114,10 +104,6 @@ abstract class Container
             'app.basePath' => $this->basePath,
         ]);
 
-        $containerBuilder->addDefinitions([
-            'app.mode' => $this->environment,
-            'app.context' => $this->context,
-        ]);
 
         $configPath = $pathContainer->getConfigPath();
         $definitionPath = $configPath . 'container/';
@@ -129,27 +115,30 @@ abstract class Container
         }
         $config->loadFile($configFile);
 
-        $containerBuilder->addDefinitions([Context::class => $this->context]);
-        $containerBuilder->addDefinitions([PathContainer::class => $pathContainer]);
-        $containerBuilder->addDefinitions([Config::class => $config]);
-        $containerBuilder->addDefinitions([EventDispatcherInterface::class => $this->eventDispatcher]);
-        $containerBuilder->addDefinitions([DefaultProvider::class => autowire(DefaultProvider::class)]);
-        $containerBuilder->addDefinitions([AggregateProvider::class => $this->eventListenerProvider]);
-        $containerBuilder->addDefinitions([PriorityAggregateProvider::class => $this->eventListenerProvider]);
+        $this->extensionRegistry = new Extensions();
+        $containerBuilder->addDefinitions([
+            AggregateProvider::class => $this->eventListenerProvider,
+            Config::class => $config,
+            Context::class => $this->context,
+            DefaultProvider::class => autowire(DefaultProvider::class),
+            Environment::class => $this->environment,
+            EventDispatcherInterface::class => $this->eventDispatcher,
+            Extensions::class => $this->extensionRegistry,
+            PathContainer::class => $pathContainer,
+            PriorityAggregateProvider::class => $this->eventListenerProvider
+        ]);
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
-        $extensionRegistry = new Extensions();
-        $containerBuilder->addDefinitions([Extensions::class => $extensionRegistry]);
         $deferredDefinitions = [];
-
         $cliApplications = [];
         $extensions = $pathContainer->loadConfigFile('extensions');
         foreach ($extensions as $extensionName => $extension) {
-            if (is_string($extension) && class_exists($extension)) {
-                $extension = new $extension($pathContainer);
-                $extensionRegistry->addExtension($extensionName, $extension);
+            if (!(is_string($extension) && class_exists($extension))) {
+                continue;
             }
+            $extension = new $extension($pathContainer);
+            $this->extensionRegistry->addExtension($extensionName, $extension);
             if ($extension instanceof ExtensionInterface) {
                 $defs = $extension->configure();
                 if (isset($defs[0])) {
@@ -172,17 +161,18 @@ abstract class Container
             if ($extension instanceof InitCliApplication) {
                 $cliApplications[] = $extension;
             }
-
-            $this->extensions[] = $extension;
+            $this->eventDispatcher->dispatch(new InitExtension($extension));
         }
 
         $modules = $pathContainer->loadConfigFile('modules');
         if (is_array($modules) && count($modules)) {
             foreach ($modules as $module) {
-                if (is_string($module) && class_exists($module)) {
-                    $module = new $module($pathContainer);
-                    $extensionRegistry->addModule(get_class($module), $module);
+                if (!(is_string($module) && class_exists($module))) {
+                    continue;
                 }
+
+                $module = new $module($pathContainer);
+                $this->extensionRegistry->addModule(get_class($module), $module);
                 if ($module instanceof ModuleInterface) {
                     $definitions = $module->configure();
                     if (isset($definitions[0])) {
@@ -205,17 +195,13 @@ abstract class Container
                 if ($module instanceof InitCliApplication) {
                     $cliApplications[] = $module;
                 }
-                if ($module instanceof InitAdrApplication) {
-                    $this->eventDispatcher->dispatch(new InitModule($module));
-                }
-
-                $this->modules[] = $module;
+                $this->eventDispatcher->dispatch(new InitModule($module));
             }
         }
 
         if ($deferredDefinitions) {
             foreach ($deferredDefinitions as $def) {
-                if ($def->getCondition()->evaluate($extensionRegistry, $this->environment, $this->context)) {
+                if ($def->getCondition()->evaluate($this->extensionRegistry, $this->environment, $this->context)) {
                     $containerBuilder->addDefinitions($def->getDefinitions());
                 }
             }
@@ -233,7 +219,6 @@ abstract class Container
             return $this->container;
         }
         $this->eventListenerProvider->addProvider($this->container->get(DefaultProvider::class));
-
         $this->eventDispatcher->dispatch(new PostContainerBuild($this));
 
         return $this->container;
@@ -241,11 +226,11 @@ abstract class Container
 
     public function getModules(): array
     {
-        return $this->modules;
+        return $this->extensionRegistry->getModules();
     }
 
     public function getExtensions(): array
     {
-        return $this->extensions;
+        return $this->extensionRegistry->getExtensions();
     }
 }

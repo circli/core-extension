@@ -2,32 +2,17 @@
 
 namespace Circli\Core;
 
-use Circli\Contracts\ExtensionInterface;
+use Circli\Console\Application;
 use Circli\Contracts\InitCliApplication;
-use Circli\Contracts\PathContainer;
-use Circli\Core\Command\ContainerCompiler;
 use Circli\Core\Command\CrontabCompile;
+use Circli\Core\Command\Definition\ContainerCompiler;
 use Psr\Container\ContainerInterface;
 
-class Extension implements ExtensionInterface, InitCliApplication
+class Extension implements InitCliApplication
 {
-    public function __construct(PathContainer $paths)
+    public function initCli(Application $cli, ContainerInterface $container)
     {
-    }
-
-    public function configure(): array
-    {
-        return [
-            ContainerCompiler::class => function (ContainerInterface $container) {
-                $config = $container->get(Config::class);
-                return new ContainerCompiler($config->get('app.basePath'));
-            },
-        ];
-    }
-
-    public function initCli(\Symfony\Component\Console\Application $cli, ContainerInterface $container)
-    {
-        $cli->add($container->get(ContainerCompiler::class));
-        $cli->add($container->get(CrontabCompile::class));
+        $cli->addDefinition(new ContainerCompiler());
+        $cli->addDefinition($container->get(CrontabCompile::class));
     }
 }
