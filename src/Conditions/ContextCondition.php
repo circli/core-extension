@@ -6,8 +6,7 @@ use Circli\Core\Enum\Context;
 
 final class ContextCondition implements ConditionInterface
 {
-    /** @var Context */
-    private $context;
+    private Context $context;
 
     public static function server(): self
     {

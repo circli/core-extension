@@ -8,14 +8,12 @@ use Psr\Container\NotFoundExceptionInterface;
 
 class Config implements ContainerInterface
 {
-    /** @var array */
-    private $config = [];
-    /** @var string */
-    private $configPath;
+    private array $config = [];
+    private string $configPath;
     /** @var string[] */
-    private $files = [];
+    private array $files = [];
     /** @var string[] */
-    private $loaded = [];
+    private array $loaded = [];
 
     public function __construct(string $configPath)
     {

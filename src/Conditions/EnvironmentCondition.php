@@ -6,8 +6,7 @@ use Circli\Core\Environment;
 
 final class EnvironmentCondition implements ConditionInterface
 {
-    /** @var Environment */
-    private $environment;
+    private Environment $environment;
 
     public function __construct(Environment $environment)
     {

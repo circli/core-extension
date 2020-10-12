@@ -7,10 +7,8 @@ use Psr\Container\ContainerInterface;
 
 final class InitCliCommands
 {
-    /** @var InitCliApplication */
-    private $application;
-    /** @var ContainerInterface */
-    private $container;
+    private InitCliApplication $application;
+    private ContainerInterface $container;
 
     public function __construct(InitCliApplication $application, ContainerInterface $container)
     {

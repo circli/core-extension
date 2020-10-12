@@ -12,9 +12,9 @@ use Circli\Core\Enum\Context;
 
 class ConditionalDefinition
 {
+    /** @var string|array */
     private $def;
-    /** @var ConditionInterface */
-    private $condition;
+    private ConditionInterface $condition;
 
     public static function classExist(string $class, $def): self
     {
@@ -49,10 +49,10 @@ class ConditionalDefinition
 
     public function getDefinitions(): array
     {
-        if (file_exists($this->def)) {
+        if (is_string($this->def) && file_exists($this->def)) {
             return include $this->def;
         }
-        return $this->defs;
+        return $this->def;
     }
 
     public function getCondition(): ConditionInterface

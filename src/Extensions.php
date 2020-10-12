@@ -12,8 +12,6 @@ final class Extensions
     private $extensions = [];
     /** @var array<string, object> */
     private $modules = [];
-    /** @var array<string, array> */
-    private $provides = [];
 
     public function addExtension(string $name, $extension): void
     {
@@ -50,6 +48,11 @@ final class Extensions
 
     public function getModules()
     {
-        return array_values($this->$this->modules);
+        return array_values($this->modules);
+    }
+
+    public function getExtensions(): array
+    {
+        return array_values($this->extensions);
     }
 }

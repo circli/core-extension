@@ -6,8 +6,7 @@ use Circli\Core\Extensions;
 
 final class ExtensionLoaded implements ConditionInterface
 {
-    /** @var string */
-    private $extensionName;
+    private string $extensionName;
 
     public function __construct(string $extensionName)
     {

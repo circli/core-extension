@@ -6,8 +6,7 @@ use Circli\Core\Extensions;
 
 final class ModuleLoaded implements ConditionInterface
 {
-    /** @var string */
-    private $moduleName;
+    private string $moduleName;
 
     public function __construct(string $moduleName)
     {

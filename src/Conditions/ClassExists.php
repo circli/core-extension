@@ -4,8 +4,7 @@ namespace Circli\Core\Conditions;
 
 class ClassExists implements ConditionInterface
 {
-    /** @var string */
-    private $className;
+    private string $className;
 
     public function __construct(string $className)
     {

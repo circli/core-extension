@@ -5,7 +5,7 @@ namespace Circli\Core\Conditions;
 final class AggregateCondition implements ConditionInterface
 {
     /** @var ConditionInterface[] */
-    private $conditions;
+    private array $conditions;
 
     public function __construct(ConditionInterface ...$conditions)
     {
