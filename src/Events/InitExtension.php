@@ -2,16 +2,18 @@
 
 namespace Circli\Core\Events;
 
+use Circli\Core\Extension;
+
 final class InitExtension
 {
-    private InitExtension $extension;
+    private $extension;
 
-    public function __construct(InitExtension $extension)
+    public function __construct($extension)
     {
         $this->extension = $extension;
     }
 
-    public function getExtension(): InitExtension
+    public function getExtension()
     {
         return $this->extension;
     }
