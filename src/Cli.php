@@ -45,10 +45,12 @@ class Cli
         $this->eventListenerProvider = new DefaultProvider();
         $this->containerBuilder->getEventListenerProvider()->addProvider($this->eventListenerProvider);
         $this->eventListenerProvider->listen(InitCliCommands::class, function (InitCliCommands $event) {
+            if (!isset($this->application)) {
+                $this->application = new Application(new ContainerCommandResolver($event->getContainer()));
+            }
             $event->getApplication()->initCli($this->application, $event->getContainer());
         });
         $this->container = $this->containerBuilder->build();
-        $this->application = new Application(new ContainerCommandResolver($this->container));
     }
 
     public function run(): int
