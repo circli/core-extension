@@ -2,16 +2,17 @@
 
 namespace Circli\Core;
 
+use Circli\Contracts\ExtensionInterface;
 use Circli\Contracts\ModuleInterface;
 
 final class Extensions
 {
     /** @var array<string, int> */
-    private $names = [];
+    private array $names = [];
     /** @var array<string, object> */
-    private $extensions = [];
-    /** @var array<string, object> */
-    private $modules = [];
+    private array $extensions = [];
+    /** @var array<string, ModuleInterface> */
+    private array $modules = [];
 
     public function addExtension(string $name, $extension): void
     {
@@ -46,13 +47,72 @@ final class Extensions
         return $this->modules[$name] ?? null;
     }
 
-    public function getModules()
+    /**
+     * @return ModuleInterface[]
+     */
+    public function getModules(): array
     {
         return array_values($this->modules);
     }
 
+    /**
+     * @return ExtensionInterface[]|object[]
+     */
     public function getExtensions(): array
     {
         return array_values($this->extensions);
+    }
+
+    /**
+     * @template T
+     * @param class-string<T> $interface
+     * @return array<T>
+     */
+    public function filterModulesByInterface(string $interface): array
+    {
+        $return = [];
+        foreach ($this->modules as $module) {
+            if ($module instanceof $interface) {
+                $return[] = $module;
+            }
+        }
+        return $return;
+    }
+
+    /**
+     * @template T
+     * @param class-string<T> $interface
+     * @return array<T>
+     */
+    public function filterExtensionsByInterface(string $interface): array
+    {
+        $return = [];
+        foreach ($this->modules as $module) {
+            if ($module instanceof $interface) {
+                $return[] = $module;
+            }
+        }
+        return $return;
+    }
+
+    /**
+     * @template T
+     * @param class-string<T> $interface
+     * @return array<T>
+     */
+    public function filterAllByInterface(string $interface): array
+    {
+        $return = [];
+        foreach ($this->extensions as $extension) {
+            if ($extension instanceof $interface) {
+                $return[] = $extension;
+            }
+        }
+        foreach ($this->modules as $module) {
+            if ($module instanceof $interface) {
+                $return[] = $module;
+            }
+        }
+        return $return;
     }
 }
