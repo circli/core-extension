@@ -2,6 +2,8 @@
 
 namespace Circli\Core;
 
+use Circli\Contracts\EventProviderInterface;
+use Circli\Contracts\EventSubscriberInterface;
 use Circli\Contracts\ExtensionInterface;
 use Circli\Contracts\InitCliApplication;
 use Circli\Contracts\ModuleInterface;
@@ -12,6 +14,7 @@ use Circli\Core\Events\InitExtension;
 use Circli\Core\Events\InitModule;
 use Circli\Core\Events\PostContainerBuild;
 use Circli\EventDispatcher\EventDispatcher;
+use Circli\EventDispatcher\ListenerProvider\ContainerListenerProvider;
 use Circli\EventDispatcher\ListenerProvider\DefaultProvider;
 use Circli\EventDispatcher\ListenerProvider\PriorityAggregateProvider;
 use DI\ContainerBuilder;
@@ -19,11 +22,9 @@ use Fig\EventDispatcher\AggregateProvider;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\EventDispatcher\ListenerProviderInterface;
-use function class_exists;
-use function count;
 use function DI\autowire;
+use function class_exists;
 use function file_exists;
-use function is_array;
 use function is_string;
 
 abstract class Container
@@ -36,8 +37,9 @@ abstract class Container
     protected bool $allowDiCompile = true;
     protected bool $forceCompile = false;
     protected Context $context;
-
     protected Extensions $extensionRegistry;
+    /** @var ConditionalDefinition[] */
+    private array $deferredDefinitions = [];
 
     public function __construct(Environment $environment, string $basePath)
     {
@@ -104,7 +106,6 @@ abstract class Container
             'app.basePath' => $this->basePath,
         ]);
 
-
         $configPath = $pathContainer->getConfigPath();
         $definitionPath = $configPath . 'container/';
 
@@ -116,11 +117,12 @@ abstract class Container
         $config->loadFile($configFile);
 
         $this->extensionRegistry = new Extensions();
+        $defaultEventProvider = new DefaultProvider();
         $containerBuilder->addDefinitions([
             AggregateProvider::class => $this->eventListenerProvider,
             Config::class => $config,
             Context::class => $this->context,
-            DefaultProvider::class => autowire(DefaultProvider::class),
+            DefaultProvider::class => $defaultEventProvider,
             Environment::class => $this->environment,
             EventDispatcherInterface::class => $this->eventDispatcher,
             Extensions::class => $this->extensionRegistry,
@@ -130,21 +132,92 @@ abstract class Container
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
-        $deferredDefinitions = [];
-        $cliApplications = [];
         $extensions = $pathContainer->loadConfigFile('extensions');
+        $this->setupExtensions($extensions, $containerBuilder, $pathContainer);
+
+        $modules = $pathContainer->loadConfigFile('modules');
+        $this->setupExtensions($modules, $containerBuilder, $pathContainer);
+
+        foreach ($this->deferredDefinitions as $def) {
+            if ($def->getCondition()->evaluate($this->extensionRegistry, $this->environment, $this->context)) {
+                $containerBuilder->addDefinitions($def->getDefinitions());
+            }
+        }
+
+        // Run site specific definitions last so that they override definitions from modules and extensions
+        $this->initDefinitions($containerBuilder, $definitionPath);
+
+        $this->container = $containerBuilder->build();
+
+        $this->postProcessExtensions($defaultEventProvider);
+
+        if ($this->forceCompile) {
+            return $this->container;
+        }
+
+        $this->eventListenerProvider->addProvider($defaultEventProvider);
+        $this->eventDispatcher->dispatch(new PostContainerBuild($this));
+
+        return $this->container;
+    }
+
+    private function postProcessExtensions(DefaultProvider $defaultEventProvider): void
+    {
+        $cliApplications = $this->extensionRegistry->filterModulesByInterface(InitCliApplication::class);
+        /** @var InitCliApplication $application */
+        foreach ($cliApplications as $application) {
+            $this->eventDispatcher->dispatch(new InitCliCommands($application, $this->container));
+        }
+
+        $hasEventProviders = $this->extensionRegistry->filterAllByInterface(EventProviderInterface::class);
+        /** @var EventProviderInterface $ext */
+        foreach ($hasEventProviders as $ext) {
+            $this->eventListenerProvider->addProvider($ext->getEventProvider($this->container));
+        }
+
+        $containerEventProvider = new ContainerListenerProvider($this->container);
+        $hasEventSubscribes = $this->extensionRegistry->filterAllByInterface(EventSubscriberInterface::class);
+        /** @var EventSubscriberInterface $ext */
+        foreach ($hasEventSubscribes as $ext) {
+            foreach ($ext->getSubscribedEvents() as $event => $callback) {
+                if (is_callable($callback)) {
+                    $defaultEventProvider->listen($event, $callback);
+                }
+                elseif (is_string($callback) && $this->container->has($callback)) {
+                    $containerEventProvider->addService($event, $callback);
+                }
+                else {
+                    error_log('Unknown callback format');
+                }
+            }
+        }
+        $this->eventListenerProvider->addProvider($containerEventProvider);
+    }
+
+    private function setupExtensions(
+        array $extensions,
+        ContainerBuilder $containerBuilder,
+        PathContainer $pathContainer
+    ): void {
         foreach ($extensions as $extensionName => $extension) {
             if (!(is_string($extension) && class_exists($extension))) {
                 continue;
             }
             $extension = new $extension($pathContainer);
-            $this->extensionRegistry->addExtension($extensionName, $extension);
+            if ($extension instanceof ModuleInterface) {
+                $this->extensionRegistry->addModule(get_class($extension), $extension);
+                $initEvent = new InitModule($extension);
+            }
+            else {
+                $this->extensionRegistry->addExtension($extensionName, $extension);
+                $initEvent = new InitExtension($extension);
+            }
             if ($extension instanceof ExtensionInterface) {
                 $defs = $extension->configure();
                 if (isset($defs[0])) {
                     foreach ($defs as $def) {
                         if ($def instanceof ConditionalDefinition) {
-                            $deferredDefinitions[] = $def;
+                            $this->deferredDefinitions[] = $def;
                         }
                         else {
                             $containerBuilder->addDefinitions($def);
@@ -158,79 +231,7 @@ abstract class Container
             if ($extension instanceof ListenerProviderInterface) {
                 $this->eventListenerProvider->addProvider($extension);
             }
-            if ($extension instanceof InitCliApplication) {
-                $cliApplications[] = $extension;
-            }
-            $this->eventDispatcher->dispatch(new InitExtension($extension));
+            $this->eventDispatcher->dispatch($initEvent);
         }
-
-        $modules = $pathContainer->loadConfigFile('modules');
-        if (is_array($modules) && count($modules)) {
-            foreach ($modules as $module) {
-                if (!(is_string($module) && class_exists($module))) {
-                    continue;
-                }
-
-                $module = new $module($pathContainer);
-                $this->extensionRegistry->addModule(get_class($module), $module);
-                if ($module instanceof ModuleInterface) {
-                    $definitions = $module->configure();
-                    if (isset($definitions[0])) {
-                        foreach ($definitions as $def) {
-                            if ($def instanceof ConditionalDefinition) {
-                                $deferredDefinitions[] = $def;
-                            }
-                            else {
-                                $containerBuilder->addDefinitions($def);
-                            }
-                        }
-                    }
-                    else {
-                        $containerBuilder->addDefinitions($definitions);
-                    }
-                }
-                if ($module instanceof ListenerProviderInterface) {
-                    $this->eventListenerProvider->addProvider($module);
-                }
-                if ($module instanceof InitCliApplication) {
-                    $cliApplications[] = $module;
-                }
-                $this->eventDispatcher->dispatch(new InitModule($module));
-            }
-        }
-
-        if ($deferredDefinitions) {
-            foreach ($deferredDefinitions as $def) {
-                if ($def->getCondition()->evaluate($this->extensionRegistry, $this->environment, $this->context)) {
-                    $containerBuilder->addDefinitions($def->getDefinitions());
-                }
-            }
-        }
-
-        // Run site specific definitions last so that they override definitions from modules and extensions
-        $this->initDefinitions($containerBuilder, $definitionPath);
-
-        $this->container = $containerBuilder->build();
-        foreach ($cliApplications as $application) {
-            $this->eventDispatcher->dispatch(new InitCliCommands($application, $this->container));
-        }
-
-        if ($this->forceCompile) {
-            return $this->container;
-        }
-        $this->eventListenerProvider->addProvider($this->container->get(DefaultProvider::class));
-        $this->eventDispatcher->dispatch(new PostContainerBuild($this));
-
-        return $this->container;
-    }
-
-    public function getModules(): array
-    {
-        return $this->extensionRegistry->getModules();
-    }
-
-    public function getExtensions(): array
-    {
-        return $this->extensionRegistry->getExtensions();
     }
 }
