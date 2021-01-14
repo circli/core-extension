@@ -117,12 +117,11 @@ abstract class Container
         $config->loadFile($configFile);
 
         $this->extensionRegistry = new Extensions();
-        $defaultEventProvider = new DefaultProvider();
         $containerBuilder->addDefinitions([
             AggregateProvider::class => $this->eventListenerProvider,
             Config::class => $config,
             Context::class => $this->context,
-            DefaultProvider::class => $defaultEventProvider,
+            DefaultProvider::class => new DefaultProvider(),
             Environment::class => $this->environment,
             EventDispatcherInterface::class => $this->eventDispatcher,
             Extensions::class => $this->extensionRegistry,
@@ -149,19 +148,21 @@ abstract class Container
 
         $this->container = $containerBuilder->build();
 
-        $this->postProcessExtensions($defaultEventProvider);
+        $coreEventProvider = new CoreEventProvider($this->container);
+        $this->postProcessExtensions($coreEventProvider);
 
         if ($this->forceCompile) {
             return $this->container;
         }
 
-        $this->eventListenerProvider->addProvider($defaultEventProvider);
+        $this->eventListenerProvider->addProvider($coreEventProvider);
+        $this->eventListenerProvider->addProvider($this->container->get(DefaultProvider::class));
         $this->eventDispatcher->dispatch(new PostContainerBuild($this));
 
         return $this->container;
     }
 
-    private function postProcessExtensions(DefaultProvider $defaultEventProvider): void
+    private function postProcessExtensions(CoreEventProvider $eventProvider): void
     {
         $cliApplications = $this->extensionRegistry->filterModulesByInterface(InitCliApplication::class);
         /** @var InitCliApplication $application */
@@ -175,23 +176,13 @@ abstract class Container
             $this->eventListenerProvider->addProvider($ext->getEventProvider($this->container));
         }
 
-        $containerEventProvider = new ContainerListenerProvider($this->container);
         $hasEventSubscribes = $this->extensionRegistry->filterAllByInterface(EventSubscriberInterface::class);
         /** @var EventSubscriberInterface $ext */
         foreach ($hasEventSubscribes as $ext) {
             foreach ($ext->getSubscribedEvents() as $event => $callback) {
-                if (is_callable($callback)) {
-                    $defaultEventProvider->listen($event, $callback);
-                }
-                elseif (is_string($callback) && $this->container->has($callback)) {
-                    $containerEventProvider->addService($event, $callback);
-                }
-                else {
-                    error_log('Unknown callback format');
-                }
+                $eventProvider->subscribe($event, $callback);
             }
         }
-        $this->eventListenerProvider->addProvider($containerEventProvider);
     }
 
     private function setupExtensions(
