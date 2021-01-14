@@ -195,7 +195,7 @@ abstract class Container
                 continue;
             }
             $extension = new $extension($pathContainer);
-            if ($extension instanceof ModuleInterface) {
+            if ($extension instanceof ModuleInterface || is_int($extensionName)) {
                 $this->extensionRegistry->addModule(get_class($extension), $extension);
                 $initEvent = new InitModule($extension);
             }
