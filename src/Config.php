@@ -9,16 +9,14 @@ use Psr\Container\NotFoundExceptionInterface;
 class Config implements ContainerInterface
 {
     private array $config = [];
-    private string $configPath;
     /** @var string[] */
     private array $files = [];
     /** @var string[] */
     private array $loaded = [];
 
-    public function __construct(string $configPath)
-    {
-        $this->configPath = $configPath;
-    }
+    public function __construct(
+        private string $configPath,
+    ) {}
 
     public function loadFile(string $file): void
     {
@@ -30,6 +28,9 @@ class Config implements ContainerInterface
         $this->config = array_merge($this->config, $config);
     }
 
+    /**
+     * @return string[]
+     */
     public function getLoadedFiles(): array
     {
         return $this->loaded;

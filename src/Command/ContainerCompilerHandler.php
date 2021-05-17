@@ -4,7 +4,7 @@ namespace Circli\Core\Command;
 
 use Circli\Contracts\PathContainer;
 use Circli\Core\Command\Input\ContainerCompilerInput;
-use Circli\Core\Container;
+use Circli\Core\ContainerBuilder;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ContainerCompilerHandler
@@ -24,8 +24,8 @@ class ContainerCompilerHandler
         }
 
         $containerBuilder = new $containerClass($input->getEnvironment(), $this->basePath);
-        if (!$containerBuilder instanceof Container) {
-            throw new \RuntimeException('Invalid container type. Container must extend ' . Container::class);
+        if (!$containerBuilder instanceof ContainerBuilder) {
+            throw new \RuntimeException('Invalid container type. Container must extend ' . ContainerBuilder::class);
         }
         $output->writeln('Found container: ' . get_class($containerBuilder));
         $containerBuilder->forceCompile();

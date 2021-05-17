@@ -6,14 +6,11 @@ use Circli\Contracts\ModuleInterface;
 
 class InitModule
 {
-    private $module;
+    public function __construct(
+        private ModuleInterface $module
+    ) {}
 
-    public function __construct($module)
-    {
-        $this->module = $module;
-    }
-
-    public function getModule()
+    public function getModule(): ModuleInterface
     {
         return $this->module;
     }

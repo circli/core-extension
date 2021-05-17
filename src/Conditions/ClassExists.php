@@ -4,12 +4,9 @@ namespace Circli\Core\Conditions;
 
 class ClassExists implements ConditionInterface
 {
-    private string $className;
-
-    public function __construct(string $className)
-    {
-        $this->className = $className;
-    }
+    public function __construct(
+        private string $className,
+    ) {}
 
     public function evaluate(...$args): bool
     {

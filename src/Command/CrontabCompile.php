@@ -11,12 +11,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class CrontabCompile extends Definition
 {
-    private PathContainer $pathContainer;
-
-    public function __construct(PathContainer $pathContainer)
-    {
+    public function __construct(
+        private PathContainer $pathContainer,
+    ) {
         parent::__construct();
-        $this->pathContainer = $pathContainer;
     }
 
     public function configure(): void

@@ -6,8 +6,6 @@ use Circli\Core\Enum\Context;
 
 final class ContextCondition implements ConditionInterface
 {
-    private Context $context;
-
     public static function server(): self
     {
         return new self(Context::SERVER());
@@ -18,10 +16,9 @@ final class ContextCondition implements ConditionInterface
         return new self(Context::CONSOLE());
     }
 
-    public function __construct(Context $context)
-    {
-        $this->context = $context;
-    }
+    public function __construct(
+        private Context $context,
+    ) {}
 
     public function evaluate(...$args): bool
     {

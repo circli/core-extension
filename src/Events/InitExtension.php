@@ -6,14 +6,11 @@ use Circli\Core\Extension;
 
 final class InitExtension
 {
-    private $extension;
+    public function __construct(
+        private object $extension,
+    ) {}
 
-    public function __construct($extension)
-    {
-        $this->extension = $extension;
-    }
-
-    public function getExtension()
+    public function getExtension(): object
     {
         return $this->extension;
     }

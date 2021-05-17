@@ -6,37 +6,36 @@ use Actus\Path;
 
 class PathResolver
 {
-    protected $ns = [
+    /** @var string[] */
+    protected array $ns = [
         'config:',
         'resources:',
         'template:',
     ];
-    private $actus;
 
-    public function __construct(Path $path)
-    {
-        $this->actus = $path;
-    }
+    public function __construct(
+        private Path $path,
+    ) {}
 
     public function get(string $path): ?string
     {
-        $realPath = $this->actus->get($path);
+        $realPath = $this->path->get($path);
 
         [$alias, $filePath] = explode(':', $path);
         if (!$realPath && strpos($filePath, '/')) {
             [$moduleAlias, $filePath] = explode('/', $filePath, 2);
             $modulePath = $moduleAlias . '-' . $alias . ':' . $filePath;
-            $realPath = $this->actus->get($modulePath);
+            $realPath = $this->path->get($modulePath);
         }
 
         return $realPath;
     }
 
-    public function add(string $module, string $ns, string $path)
+    public function add(string $module, string $ns, string $path): static
     {
         $alias = $module . '-' . $ns;
 
-        $this->actus->set($path, $alias, Path::MOD_PREPEND);
+        $this->path->set($path, $alias, Path::MOD_PREPEND);
 
         return $this;
     }

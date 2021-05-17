@@ -17,7 +17,7 @@ use Circli\EventDispatcher\EventDispatcher;
 use Circli\EventDispatcher\ListenerProvider\ContainerListenerProvider;
 use Circli\EventDispatcher\ListenerProvider\DefaultProvider;
 use Circli\EventDispatcher\ListenerProvider\PriorityAggregateProvider;
-use DI\ContainerBuilder;
+use DI\ContainerBuilder as DiContainerBuilder;
 use Fig\EventDispatcher\AggregateProvider;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -27,10 +27,8 @@ use function class_exists;
 use function file_exists;
 use function is_string;
 
-abstract class Container
+abstract class ContainerBuilder
 {
-    protected Environment $environment;
-    protected string $basePath;
     protected EventDispatcherInterface $eventDispatcher;
     protected ContainerInterface $container;
     protected PriorityAggregateProvider $eventListenerProvider;
@@ -40,19 +38,20 @@ abstract class Container
     protected Extensions $extensionRegistry;
     /** @var ConditionalDefinition[] */
     private array $deferredDefinitions = [];
+    private PathContainer $pathContainer;
 
-    public function __construct(Environment $environment, string $basePath)
-    {
-        $this->environment = $environment;
-        $this->basePath = $basePath;
+    public function __construct(
+        protected Environment $environment,
+        protected string $basePath,
+        ?PathContainer $pathContainer = null,
+    ) {
+        $this->pathContainer = $pathContainer ?? new DefaultPathContainer($this->basePath);
         $this->eventListenerProvider = new PriorityAggregateProvider();
         $this->eventDispatcher = new EventDispatcher($this->eventListenerProvider);
         $this->context = php_sapi_name() === 'cli' ? Context::CONSOLE() : Context::SERVER();
     }
 
-    abstract protected function getPathContainer(): PathContainer;
-
-    protected function initDefinitions(ContainerBuilder $builder, string $defaultDefinitionPath)
+    protected function initDefinitions(DiContainerBuilder $builder, string $defaultDefinitionPath)
     {
     }
 
@@ -83,7 +82,7 @@ abstract class Container
 
     public function build(): ContainerInterface
     {
-        $containerBuilder = new ContainerBuilder();
+        $containerBuilder = new DiContainerBuilder();
         if ($this->forceCompile || (
                 $this->allowDiCompile && (
                     $this->environment->is(Environment::PRODUCTION()) ||
@@ -97,7 +96,6 @@ abstract class Container
             }
         }
 
-        $pathContainer = $this->getPathContainer();
         $configPath = $this->basePath . '/config/';
         $config = new Config($configPath);
         $config->add([
@@ -106,7 +104,7 @@ abstract class Container
             'app.basePath' => $this->basePath,
         ]);
 
-        $configPath = $pathContainer->getConfigPath();
+        $configPath = $this->pathContainer->getConfigPath();
         $definitionPath = $configPath . 'container/';
 
         $configFile = $this->environment . '.php';
@@ -125,17 +123,17 @@ abstract class Container
             Environment::class => $this->environment,
             EventDispatcherInterface::class => $this->eventDispatcher,
             Extensions::class => $this->extensionRegistry,
-            PathContainer::class => $pathContainer,
+            PathContainer::class => $this->pathContainer,
             PriorityAggregateProvider::class => $this->eventListenerProvider
         ]);
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
 
-        $extensions = $pathContainer->loadConfigFile('extensions');
-        $this->setupExtensions($extensions, $containerBuilder, $pathContainer);
+        $extensions = $this->pathContainer->loadConfigFile('extensions');
+        $this->setupExtensions($extensions, $containerBuilder, $this->pathContainer);
 
-        $modules = $pathContainer->loadConfigFile('modules');
-        $this->setupExtensions($modules, $containerBuilder, $pathContainer);
+        $modules = $this->pathContainer->loadConfigFile('modules');
+        $this->setupExtensions($modules, $containerBuilder, $this->pathContainer);
 
         foreach ($this->deferredDefinitions as $def) {
             if ($def->getCondition()->evaluate($this->extensionRegistry, $this->environment, $this->context)) {
@@ -187,7 +185,7 @@ abstract class Container
 
     private function setupExtensions(
         array $extensions,
-        ContainerBuilder $containerBuilder,
+        DiContainerBuilder $containerBuilder,
         PathContainer $pathContainer
     ): void {
         foreach ($extensions as $extensionName => $extension) {

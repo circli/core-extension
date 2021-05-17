@@ -7,12 +7,9 @@ use Psr\Container\ContainerInterface;
 
 final class CoreEventProvider extends DefaultProvider
 {
-    private ContainerInterface $container;
-
-    public function __construct(ContainerInterface $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(
+        private ContainerInterface $container,
+    ) {}
 
     /**
      * @param class-string|string $event

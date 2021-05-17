@@ -16,7 +16,7 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 class Cli
 {
     protected ContainerInterface $container;
-    protected Container $containerBuilder;
+    protected ContainerBuilder $containerBuilder;
     protected EventDispatcherInterface $eventDispatcher;
     protected DefaultProvider $eventListenerProvider;
 
@@ -37,8 +37,8 @@ class Cli
         }
 
         $containerBuilder = new $containerClass($mode, $basePath ?? \dirname(__DIR__, 3));
-        if (!$containerBuilder instanceof Container) {
-            throw new \RuntimeException('Container must extend: ' . Container::class);
+        if (!$containerBuilder instanceof ContainerBuilder) {
+            throw new \RuntimeException('Container must extend: ' . ContainerBuilder::class);
         }
         $this->containerBuilder = $containerBuilder;
         $this->eventDispatcher = $this->containerBuilder->getEventDispatcher();

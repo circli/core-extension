@@ -2,18 +2,15 @@
 
 namespace Circli\Core\Events;
 
-use Circli\Core\Container;
+use Circli\Core\ContainerBuilder;
 
 class PostContainerBuild
 {
-    private Container $container;
+    public function __construct(
+        private ContainerBuilder $container,
+    ) {}
 
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-    }
-
-    public function getContainer(): Container
+    public function getContainer(): ContainerBuilder
     {
         return $this->container;
     }

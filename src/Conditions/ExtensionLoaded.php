@@ -6,12 +6,9 @@ use Circli\Core\Extensions;
 
 final class ExtensionLoaded implements ConditionInterface
 {
-    private string $extensionName;
-
-    public function __construct(string $extensionName)
-    {
-        $this->extensionName = $extensionName;
-    }
+    public function __construct(
+        private string $extensionName,
+    ) {}
 
     public function evaluate(...$args): bool
     {

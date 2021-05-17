@@ -12,8 +12,7 @@ use Circli\Core\Enum\Context;
 
 class ConditionalDefinition
 {
-    /** @var string|array */
-    private $def;
+    private string|array $def;
     private ConditionInterface $condition;
 
     public static function classExist(string $class, $def): self

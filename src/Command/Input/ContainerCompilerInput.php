@@ -7,15 +7,10 @@ use Circli\Core\Environment;
 
 final class ContainerCompilerInput extends AbstractInput
 {
-    private Environment $environment;
-
-    private string $containerClass;
-
-    public function __construct(Environment $environment, string $containerClass)
-    {
-        $this->environment = $environment;
-        $this->containerClass = $containerClass;
-    }
+    public function __construct(
+        private Environment $environment,
+        private string $containerClass,
+    ) {}
 
     public function getEnvironment(): Environment
     {

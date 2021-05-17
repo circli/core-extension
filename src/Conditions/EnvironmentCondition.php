@@ -6,12 +6,9 @@ use Circli\Core\Environment;
 
 final class EnvironmentCondition implements ConditionInterface
 {
-    private Environment $environment;
-
-    public function __construct(Environment $environment)
-    {
-        $this->environment = $environment;
-    }
+    public function __construct(
+        private Environment $environment,
+    ) {}
 
     public function evaluate(...$args): bool
     {
