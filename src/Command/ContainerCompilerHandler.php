@@ -46,6 +46,9 @@ class ContainerCompilerHandler
         if (!is_dir($compileDir)) {
             return;
         }
+        if ($compileDir === sys_get_temp_dir()) {
+            return;
+        }
 
         $files = glob($compileDir . '/*');
         foreach ($files as $file) {

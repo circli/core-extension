@@ -96,6 +96,8 @@ abstract class ContainerBuilder
             }
         }
 
+        $containerBuilder = $this->preBuild($containerBuilder);
+
         $configPath = $this->basePath . '/config/';
         $config = new Config($configPath);
         $config->add([
@@ -160,9 +162,14 @@ abstract class ContainerBuilder
         return $this->container;
     }
 
+    protected function preBuild(DiContainerBuilder $containerBuilder): DiContainerBuilder
+    {
+        return $containerBuilder;
+    }
+
     private function postProcessExtensions(CoreEventProvider $eventProvider): void
     {
-        $cliApplications = $this->extensionRegistry->filterModulesByInterface(InitCliApplication::class);
+        $cliApplications = $this->extensionRegistry->filterAllByInterface(InitCliApplication::class);
         /** @var InitCliApplication $application */
         foreach ($cliApplications as $application) {
             $this->eventDispatcher->dispatch(new InitCliCommands($application, $this->container));
