@@ -54,6 +54,5 @@ class ContainerCompilerHandler
         foreach ($files as $file) {
             is_dir($file) ? $this->cleanCompileDirectory($file) : unlink($file);
         }
-        rmdir($compileDir);
     }
 }
