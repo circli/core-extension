@@ -5,6 +5,7 @@ namespace Circli\Core\Command;
 use Circli\Contracts\PathContainer;
 use Circli\Core\Command\Input\ContainerCompilerInput;
 use Circli\Core\ContainerBuilder;
+use DI\Definition\Exception\InvalidDefinition;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ContainerCompilerHandler
@@ -36,8 +37,13 @@ class ContainerCompilerHandler
         $output->writeln('<info>Ok</info>');
 
         $output->write('Compiling container to: ' . str_replace($this->basePath, '', $path) . "\t\t\t");
-        $containerBuilder->build();
-        $output->writeln('<info>Ok</info>');
+        try {
+            $containerBuilder->build();
+            $output->writeln('<info>Ok</info>');
+        }
+        catch (InvalidDefinition $e) {
+            var_dump($e->getMessage());
+        }
         return 0;
     }
 

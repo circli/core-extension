@@ -24,6 +24,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\EventDispatcher\ListenerProviderInterface;
 use function DI\autowire;
 use function class_exists;
+use function DI\create;
 use function file_exists;
 use function is_string;
 
@@ -118,7 +119,7 @@ abstract class ContainerBuilder
 
         $this->extensionRegistry = new Extensions();
         $containerBuilder->addDefinitions([
-            AggregateProvider::class => $this->eventListenerProvider,
+            AggregateProvider::class => create(AggregateProvider::class),
             Config::class => $config,
             Context::class => $this->context,
             DefaultProvider::class => new DefaultProvider(),
@@ -157,6 +158,7 @@ abstract class ContainerBuilder
 
         $this->eventListenerProvider->addProvider($coreEventProvider);
         $this->eventListenerProvider->addProvider($this->container->get(DefaultProvider::class));
+        $this->eventListenerProvider->addProvider($this->container->get(AggregateProvider::class));
         $this->eventDispatcher->dispatch(new PostContainerBuild($this));
 
         return $this->container;
