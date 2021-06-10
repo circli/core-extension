@@ -15,7 +15,7 @@ class Extension implements ExtensionInterface, InitCliApplication
     {
     }
 
-    public function configure(): array
+    public function configure(PathContainer $pathContainer = null): array
     {
         return [
             ContainerCompiler::class => function (ContainerInterface $container) {
@@ -25,7 +25,10 @@ class Extension implements ExtensionInterface, InitCliApplication
         ];
     }
 
-    public function initCli(\Symfony\Component\Console\Application $cli, ContainerInterface $container)
+    /**
+     * @param \Symfony\Component\Console\Application|\Circli\Console\Application $cli
+     */
+    public function initCli($cli, ContainerInterface $container)
     {
         $cli->add($container->get(ContainerCompiler::class));
         $cli->add($container->get(CrontabCompile::class));
