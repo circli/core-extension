@@ -164,7 +164,7 @@ abstract class Container
 
     private function postProcessExtensions(CoreEventProvider $eventProvider): void
     {
-        $cliApplications = $this->extensionRegistry->filterModulesByInterface(InitCliApplication::class);
+        $cliApplications = $this->extensionRegistry->filterAllByInterface(InitCliApplication::class);
         /** @var InitCliApplication $application */
         foreach ($cliApplications as $application) {
             $this->eventDispatcher->dispatch(new InitCliCommands($application, $this->container));
