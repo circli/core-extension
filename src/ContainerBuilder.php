@@ -122,7 +122,7 @@ abstract class ContainerBuilder
             AggregateProvider::class => create(AggregateProvider::class),
             Config::class => $config,
             Context::class => $this->context,
-            DefaultProvider::class => new DefaultProvider(),
+            DefaultProvider::class => fn () => new DefaultProvider(),
             Environment::class => $this->environment,
             EventDispatcherInterface::class => $this->eventDispatcher,
             Extensions::class => $this->extensionRegistry,
