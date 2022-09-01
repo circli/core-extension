@@ -201,6 +201,7 @@ abstract class ContainerBuilder
             if (!(is_string($extension) && class_exists($extension))) {
                 continue;
             }
+            $initEvent = null;
             $extension = new $extension($pathContainer);
             if ($extension instanceof ModuleInterface || is_int($extensionName)) {
                 $this->extensionRegistry->addModule(get_class($extension), $extension);
@@ -231,7 +232,9 @@ abstract class ContainerBuilder
             if ($extension instanceof ListenerProviderInterface) {
                 $this->eventListenerProvider->addProvider($extension);
             }
-            $this->eventDispatcher->dispatch($initEvent);
+            if ($initEvent) {
+                $this->eventDispatcher->dispatch($initEvent);
+            }
         }
     }
 }
