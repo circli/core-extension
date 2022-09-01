@@ -127,7 +127,7 @@ abstract class ContainerBuilder
             EventDispatcherInterface::class => $this->eventDispatcher,
             Extensions::class => $this->extensionRegistry,
             PathContainer::class => $this->pathContainer,
-            PriorityAggregateProvider::class => $this->eventListenerProvider
+            PriorityAggregateProvider::class => create(PriorityAggregateProvider::class),
         ]);
         $containerBuilder->addDefinitions($definitionPath . 'core.php');
         $containerBuilder->addDefinitions($definitionPath . 'logger.php');
@@ -148,6 +148,8 @@ abstract class ContainerBuilder
         $this->initDefinitions($containerBuilder, $definitionPath);
 
         $this->container = $containerBuilder->build();
+
+        $this->eventListenerProvider = $this->eventListenerProvider->merge($this->container->get(PriorityAggregateProvider::class));
 
         $coreEventProvider = new CoreEventProvider($this->container);
         $this->postProcessExtensions($coreEventProvider);
