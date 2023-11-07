@@ -54,7 +54,7 @@ class Config implements ContainerInterface
     /**
      * @inheritdoc
      */
-    public function has($id)
+    public function has($id): bool
     {
         if (!\array_key_exists($id, $this->config) && count($this->files)) {
             $configs = [];
