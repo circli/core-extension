@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f6118990fc506a04c798a299a977537c",
+    "content-hash": "95390b684a4a9a332079c6e7b5ac6d90",
     "packages": [
         {
             "name": "circli/console",
-            "version": "1.1.1",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/circli/console.git",
-                "reference": "307a1484f64b4302e8f51864aca35b622b47d1db"
+                "reference": "791daf63808b5dd21c69043f90d3170a0cb921e8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/circli/console/zipball/307a1484f64b4302e8f51864aca35b622b47d1db",
-                "reference": "307a1484f64b4302e8f51864aca35b622b47d1db",
+                "url": "https://api.github.com/repos/circli/console/zipball/791daf63808b5dd21c69043f90d3170a0cb921e8",
+                "reference": "791daf63808b5dd21c69043f90d3170a0cb921e8",
                 "shasum": "",
                 "mirrors": [
                     {
@@ -27,12 +27,12 @@
                 ]
             },
             "require": {
-                "php": "^7.4 || ^8.0",
-                "symfony/console": "^4.0||^5.0||^6.0"
+                "php": "^8.1",
+                "symfony/console": "^5.0||^6.0"
             },
             "require-dev": {
                 "phpstan/phpstan": "^1.4",
-                "phpunit/phpunit": "^9.0",
+                "phpunit/phpunit": "^10.0",
                 "psr/container": "^1.0"
             },
             "type": "library",
@@ -54,9 +54,9 @@
             "description": "wrapper around symfony console to better support containers",
             "support": {
                 "issues": "https://github.com/circli/console/issues",
-                "source": "https://github.com/circli/console/tree/1.1.1"
+                "source": "https://github.com/circli/console/tree/2.0.0"
             },
-            "time": "2023-05-24T16:45:16+00:00"
+            "time": "2023-10-26T12:27:54+00:00"
         },
         {
             "name": "circli/contracts",
@@ -1670,5 +1670,5 @@
         "php": ">=8.0.0"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.6.0"
 }
