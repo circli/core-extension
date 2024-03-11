@@ -12,7 +12,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=7.4.0",
-        "circli/console": "^1.0 || ^2.0",
+        "circli/console": "^2.0",
         "circli/contracts": "2.x-dev",
         "circli/event-dispatcher": "^2.3",
         "php-di/php-di": "^6.0 || ^7.0",
