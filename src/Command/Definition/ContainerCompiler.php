@@ -9,6 +9,7 @@ use Circli\Core\Environment;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class ContainerCompiler extends Definition
 {
@@ -28,7 +29,7 @@ class ContainerCompiler extends Definition
             ->setCommand(ContainerCompilerHandler::class);
     }
 
-    public function transformInput(InputInterface $input): InputInterface
+    public function transformInput(InputInterface $input, OutputInterface $output): InputInterface
     {
         $env = Environment::fromValue($input->getOption('environment'));
         $containerClass = $input->getArgument('container') ?? \App\Container::class;
