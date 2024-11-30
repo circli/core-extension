@@ -20,5 +20,9 @@ foreach ($paths as $path) {
     }
 }
 
-$app = new \Circli\Core\Cli(Environment::fromValue(getenv('APP_ENV') ?: Environment::DEVELOPMENT));
+$app = new \Circli\Core\Cli(Environment::fromValue(
+    getenv('APP_ENV') ?:
+    getenv('SERVER_ENV') ?:
+    Environment::DEVELOPMENT
+));
 $app->run();
