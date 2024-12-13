@@ -147,7 +147,7 @@ abstract class ContainerBuilder
         // Run site specific definitions last so that they override definitions from modules and extensions
         $this->initDefinitions($containerBuilder, $definitionPath);
 
-        $this->container = $containerBuilder->build();
+        $this->container = $this->wrapContainer($containerBuilder->build());
 
         $this->eventListenerProvider = $this->eventListenerProvider->merge($this->container->get(PriorityAggregateProvider::class));
 
@@ -197,7 +197,7 @@ abstract class ContainerBuilder
     private function setupExtensions(
         array $extensions,
         DiContainerBuilder $containerBuilder,
-        PathContainer $pathContainer
+        PathContainer $pathContainer,
     ): void {
         foreach ($extensions as $extensionName => $extension) {
             if (!(is_string($extension) && class_exists($extension))) {
@@ -238,5 +238,10 @@ abstract class ContainerBuilder
                 $this->eventDispatcher->dispatch($initEvent);
             }
         }
+    }
+
+    protected function wrapContainer (ContainerInterface $container): ContainerInterface
+    {
+        return $container;
     }
 }
